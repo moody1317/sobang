@@ -1,4 +1,5 @@
 from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
@@ -6,16 +7,19 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.models.user import User
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
 def get_db_session():
     yield from get_db()
 
 def get_current_user(
-        token: str,
+        token: str = Depends(oauth2_scheme),
         db: Session = Depends(get_db_session),
 ):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="인증에 실패했습니다.",
+        headers={"WWW-Authenticate": "Bearer"},
     )
 
     try:
@@ -24,7 +28,7 @@ def get_current_user(
             settings.SECRET_KEY,
             algorithms=[settings.ALGORITHM],
         )
-        firefighter_number: str | None = payload.get("sub")
+        firefighter_number = payload.get("sub")
 
         if firefighter_number is None:
             raise credentials_exception

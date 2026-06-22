@@ -18,4 +18,4 @@ def root():
     return {"message": "Sobang Backend is running"}
 
 app.include_router(auth.router, prefix="/api/v1")
-app.include_router(adin.router, prefix="/api/v1")
+app.include_router(admin.router, prefix="/api/v1")

@@ -1,8 +1,12 @@
 from fastapi import FastAPI
 
-from app.api.v1 import admin, auth
+import app.api.v1.auth as auth
+import app.api.v1.admin as admin
+import app.api.v1.station as stations
+
 from app.core.database import Base, engine
-from app.models import station, user
+import app.models.station
+import app.models.user
 
 app = FastAPI(
     title="Sobang Backend",
@@ -19,3 +23,4 @@ def root():
 
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(admin.router, prefix="/api/v1")
+app.include_router(stations.router, prefix="/api/v1")

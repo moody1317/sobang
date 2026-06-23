@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
+    STATION_API_KEY: str
+    STATION_API_BASE_URL: str
+
     @property
     def DATABASE_URL(self) -> str:
         return (

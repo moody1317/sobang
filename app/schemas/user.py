@@ -1,0 +1,32 @@
+from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, EmailStr
+
+class UserBase(BaseModel):
+    firefighter_number: str
+    name: str
+    email: EmailStr
+    role: str = "firefighter"
+    rank: Optional[str] = None
+    phone_number: Optional[str] = None
+    station_id: int
+    is_active: bool = True
+    must_change_password: bool = True
+
+class UserCreate(BaseModel):
+    name: str
+    email: EmailStr
+    role: str = "firefighter"
+    rank: Optional[str] = None
+    phone_number: Optional[str] = None
+    station_id: int
+    password: str
+
+class UserResponse(UserBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True

@@ -1,0 +1,131 @@
+/* 상당소방서 위험관제 — Design Tokens */
+:root {
+  --color-brand-dark:    #9E2A33;   /* hover / active state */
+  --color-brand:         #B5333D;   /* primary CTA, links, accents */
+  --color-brand-mid:     #C0414A;   /* gradient middle */
+  --color-brand-light:   #D2575F;   /* gradient end / avatar bg */
+
+  --color-risk-danger:        #CE4034;   /* 위험 score text */
+  --color-risk-danger-bg:     #FBE7E5;   /* 위험 badge bg */
+  --color-risk-danger-text:   #A02824;   /* 위험 badge label */
+
+  --color-risk-caution:       #E58542;   /* 경계 score text */
+  --color-risk-caution-bg:    #FBEBDD;   /* 경계 badge bg */
+  --color-risk-caution-text:  #A1551C;   /* 경계 badge label */
+
+  --color-risk-warning:       #E3B24A;   /* 주의 score text */
+  --color-risk-warning-bg:    #FBF3DF;   /* 주의 badge bg */
+  --color-risk-warning-text:  #896712;   /* 주의 badge label */
+
+  --color-risk-safe:          #3DA968;   /* 안전 score text */
+  --color-risk-safe-bg:       #E8F5EE;   /* 안전 badge bg */
+  --color-risk-safe-text:     #1F7A4D;   /* 안전 badge label */
+
+  --color-success:        #2F9E62;
+  --color-success-bright: #2FCB7E;
+  --color-success-dark:   #1F7A4D;
+  --color-success-darker: #196B43;
+  --color-success-bg:     #E8F5EE;
+  --color-success-bg-alt: #F6FBF8;
+  --color-success-border: #DCEEE3;
+
+  --color-error:        #C2392F;   /* form validation errors */
+  --color-brand-alert:  #FBEAEA;   /* light alert/warning tint */
+  --color-brand-border: #F3D6D8;   /* alert border */
+  --color-brand-bg-alt: #FDF6F6;   /* very light red surface */
+
+  --color-blue:        #3E7BD6;
+  --color-blue-dark:   #2C5FA8;
+  --color-blue-bg:     #E7F0FB;
+
+  --color-purple:      #6B5BD2;
+  --color-purple-dark: #5546A8;
+  --color-purple-bg:   #ECEAF7;
+
+  --color-text-primary:     #16191D;   /* headings, body */
+  --color-text-hover-dark:  #2A2F37;   /* dark button hover */
+  --color-text-secondary:   #3D434D;   /* labels, table cells */
+  --color-text-tertiary:    #5A6270;   /* nav, captions */
+  --color-text-muted:       #6E7682;   /* help text */
+  --color-text-subtle:      #7A828C;   /* info-box text */
+  --color-text-label:       #8A9099;   /* column headers, hints */
+  --color-text-light:       #9098A2;   /* footer notes */
+  --color-text-placeholder: #A8AEB8;   /* input placeholders */
+  --color-text-disabled:    #AEB4BD;   /* disabled state */
+  --color-text-login: #FFFFFF; /* login page */
+
+  --color-bg-page:      #F5F6F8;   /* body / page background */
+  --color-bg-surface:   #F7F8FA;   /* inset panels, search bar */
+  --color-bg-surface-2: #FAFBFC;   /* table row hover, sub-panels */
+  --color-bg-white:     #FFFFFF;   /* card background */
+
+  --color-border-card:    #ECEEF1;   /* card outline */
+  --color-border-inner:   #EEF0F3;   /* inner dividers */
+  --color-border-input:   #E1E4E9;   /* form inputs */
+  --color-border-divider: #F2F3F5;   /* section rules */
+  --color-border-row:     #F4F5F7;   /* table row separators */
+  --color-border-medium:  #D9DDE3;   /* hover border */
+  --color-border-strong:  #DDE0E5;   /* prominent borders */
+  --color-border-gray:    #E6E8EC;   /* general borders */
+  --color-border-heavy:   #C4CCD6;   /* scrollbar, disabled */
+  --color-scrollbar:      #D4D8DE;   /* scrollbar thumb */
+
+  --sidebar-width: 248px;
+
+  --shadow-card:       0 4px 24px rgba(20, 25, 35, 0.05);
+  --shadow-focus:      0 0 0 3px rgba(181, 51, 61, 0.10);   /* brand focus ring */
+  --shadow-modal-bg:   rgba(20, 25, 35, 0.40);
+
+  --radius-xs:  5px;
+  --radius-sm:  6px;
+  --radius-md:  8px;
+  --radius-tag: 9px;
+  --radius-input: 10px;
+  --radius-btn:   11px;
+  --radius-icon:  12px;
+  --radius-card:  14px;
+  --radius-panel: 16px;
+  --radius-modal: 20px;
+
+  --font-sans: 'Pretendard', -apple-system, sans-serif;
+
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.25s ease;
+  --transition-anim: 0.35s ease;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-text-primary   );
+  background: var(--color-bg-page);
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+}
+
+input:focus {
+  outline: none;
+}
+
+::placeholder {
+  color: var(--color-text-placeholder);
+}
+
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-scrollbar);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}

@@ -21,7 +21,6 @@ class UserCreate(BaseModel):
     rank: Optional[str] = None
     phone_number: Optional[str] = None
     station_id: int
-    password: str
 
 class UserResponse(UserBase):
     id: int
@@ -30,3 +29,6 @@ class UserResponse(UserBase):
 
     class Config:
         from_attributes = True
+
+class UserCreateResponse(UserResponse):
+    temp_password: str

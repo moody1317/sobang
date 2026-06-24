@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, get_db_session
+from app.api.deps import get_current_user, get_current_active_user, get_db_session
 from app.models.user import User
-from app.schemas.auth import LoginRequest, TokenResponse
+from app.schemas.auth import LoginRequest, TokenResponse, PasswordChangeRequest
 from app.schemas.user import UserResponse
-from app.services.auth_service import authenticate_user, create_user_token
+from app.services.auth_service import authenticate_user, create_user_token, change_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -31,8 +31,21 @@ def login(
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
+        must_change_password=user.must_change_password,
     )
 
+@router.post("/change-password")
+def change_my_password(
+    data: PasswordChangeRequest,
+    db: Session = Depends(get_db_session),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        change_password(db, current_user, data.current_password, data.new_password)
+        return {"message": "비밀번호가 변경되었습니다."}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @router.get("/me", response_model=UserResponse)
-def read_me(current_user: User = Depends(get_current_user)):
+def read_me(current_user: User = Depends(get_current_active_user)):
     return current_user

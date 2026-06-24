@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 import app.api.v1.auth as auth
 import app.api.v1.admin as admin
@@ -11,6 +12,14 @@ import app.models.user
 app = FastAPI(
     title="Sobang Backend",
     version="0.1.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:1317"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.on_event("startup")

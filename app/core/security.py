@@ -5,7 +5,14 @@ from passlib.context import CryptContext
 
 from app.core.config import settings
 
+import secrets
+import string
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def generate_temp_password(length: int = 10) -> str:
+    alphabet = string.ascii_letters + string.digits
+    return "".join(secrets.choice(alphabet) for _ in range(length))
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)

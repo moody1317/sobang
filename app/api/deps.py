@@ -1,5 +1,5 @@
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
@@ -7,15 +7,18 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.models.user import User
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+bearer_scheme = HTTPBearer()
 
 def get_db_session():
     yield from get_db()
 
 def get_current_user(
-        token: str = Depends(oauth2_scheme),
+        credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
         db: Session = Depends(get_db_session),
 ):
+    
+    token = credentials.credentials
+    
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="인증에 실패했습니다.",
@@ -47,7 +50,15 @@ def get_current_user(
     
     return user
 
-def require_admin(current_user: User = Depends(get_current_user)):
+def get_current_active_user(current_user: User = Depends(get_current_user)):
+    if current_user.must_change_password:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="임시 비밀번호입니다. 비밀번호를 먼저 변경해주세요.",
+        )
+    return current_user
+
+def require_admin(current_user: User = Depends(get_current_active_user)):
     if current_user.role not in ["station_admin", "system_admin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

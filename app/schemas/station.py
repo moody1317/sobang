@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 class StationCreate(BaseModel):
+    objt_id: str           # 시설 고유 ID
     fclty_nm: str          # 시설(소방)명
     fclty_ty: str          # 시설(소방)유형
     fclty_cd: str          # 시설(소방)코드

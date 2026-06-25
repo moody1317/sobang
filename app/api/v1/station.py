@@ -4,6 +4,11 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db_session, require_admin
 from app.services.station_service import fetch_station_data, sync_all_stations
 
+from app.models.safety_center import SafetyCenter
+from app.schemas.station import SafetyCenterResponse
+
+from app.models.user import User
+
 router = APIRouter(prefix="/stations", tags=["stations"])
 
 @router.get("/external/test")
@@ -30,3 +35,15 @@ def sync_station_data(
         return {"message": "동기화 완료", **result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"sync error: {e}")
+    
+@router.get("/safety-centers", response_model=list[SafetyCenterResponse])
+def get_my_station_safety_centers(
+    db: Session = Depends(get_db_session),
+    admin_user: User = Depends(require_admin),
+):
+    centers = (
+        db.query(SafetyCenter)
+        .filter(SafetyCenter.station_id == admin_user.station_id)
+        .all()
+    )
+    return centers

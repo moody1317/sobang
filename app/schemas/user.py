@@ -21,12 +21,14 @@ class UserCreate(BaseModel):
     rank: Optional[str] = None
     phone_number: Optional[str] = None
     station_id: int
+    safety_center_id: Optional[int] = None
 
 class UserResponse(UserBase):
     id: int
     created_at: datetime
     updated_at: datetime
     station_name: Optional[str] = None
+    unit_name: Optional[str] = None
 
     class Config:
         from_attributes = True

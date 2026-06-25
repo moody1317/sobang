@@ -8,6 +8,7 @@ from app.schemas.user import UserResponse, ProfileUpdateRequest
 from app.models.station import Station
 from app.services.auth_service import authenticate_user, create_user_token, change_password, update_profile
 from app.core.security import verify_password
+from app.models.safety_center import SafetyCenter
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -60,8 +61,11 @@ def read_me(
     db: Session = Depends(get_db_session),
     ):
     station = db.query(Station).filter(Station.id == current_user.station_id).first()
+    safety_center = db.query(SafetyCenter).filter(SafetyCenter.id == current_user.safety_center_id).first()
+
     user_dict = UserResponse.model_validate(current_user).model_dump()
     user_dict["station_name"] = station.station_name if station else None
+    user_dict["unit_name"] = safety_center.center_name if safety_center else None
     return UserResponse(**user_dict)
 
 @router.patch("/me", response_model=UserResponse)

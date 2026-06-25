@@ -5,6 +5,7 @@ from app.models.user import User
 from app.schemas.user import UserCreate, ProfileUpdateRequest
 
 from app.models.station import Station
+from app.models.safety_center import SafetyCenter
 
 def generate_firefighter_number(db: Session, station_id: int) -> str:
     station = db.query(Station).filter(Station.id == station_id).first()
@@ -18,33 +19,7 @@ def generate_firefighter_number(db: Session, station_id: int) -> str:
         if not get_user_by_firefighter_number(db, candidate):
             return candidate
         seq += 1
-
-def create_user(db: Session, user_data: UserCreate) -> tuple[User, str]:
-    existing_user = get_user_by_email(db, user_data.email)
-    if existing_user:
-        raise ValueError("이미 사용 중인 이메일입니다.")
-    
-    firefighter_number = generate_firefighter_number(db, user_data.station_id)
-    temp_password = generate_temp_password()
-
-    new_user = User(
-        firefighter_number = firefighter_number,
-        name = user_data.name,
-        email = user_data.email,
-        password_hash = hash_password(temp_password),
-        role = user_data.role,
-        rank = user_data.rank,
-        phone_number = user_data.phone_number,
-        station_id = user_data.station_id,
-        is_active = True,
-        must_change_password = True,
-    )
-
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-
-    return new_user, temp_password
+\
 
 def change_password(db: Session, user:User, current_password: str, new_password: str):
     if not verify_password(current_password, user.password_hash):
@@ -96,6 +71,14 @@ def create_user(db: Session, user_data: UserCreate) -> tuple[User, str]:
     if existing_user:
         raise ValueError("이미 사용 중인 이메일입니다.")
 
+    if user_data.safety_center_id is not None:
+            center = db.query(SafetyCenter).filter(
+                SafetyCenter.id == user_data.safety_center_id,
+                SafetyCenter.station_id == user_data.station_id,
+            ).first()
+            if not center:
+                raise ValueError("선택한 안전센터가 해당 소방서 소속이 아닙니다.")
+            
     firefighter_number = generate_firefighter_number(db, user_data.station_id)
     temp_password = generate_temp_password()
 
@@ -108,6 +91,7 @@ def create_user(db: Session, user_data: UserCreate) -> tuple[User, str]:
         rank=user_data.rank,
         phone_number=user_data.phone_number,
         station_id=user_data.station_id,
+        safety_center_id=user_data.safety_center_id,
         is_active=True,
         must_change_password=True,
     )

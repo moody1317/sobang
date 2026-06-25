@@ -17,3 +17,10 @@ class StationResponse(StationCreate):
 
     class Config:
         from_attributes = True
+
+class SafetyCenterResponse(BaseModel):
+    id: int
+    center_name: str
+
+    class Config:
+        from_attributes = True

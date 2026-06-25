@@ -19,6 +19,7 @@ class User(Base):
     phone_number = Column(String(30), nullable=True)
 
     station_id = Column(Integer, ForeignKey("stations.id"), nullable=False)
+    safety_center_id = Column(Integer, ForeignKey("safety_centers.id"), nullable=True)
 
     is_active = Column(Boolean, default=True, nullable=False)
     must_change_password = Column(Boolean, default=True, nullable=False)

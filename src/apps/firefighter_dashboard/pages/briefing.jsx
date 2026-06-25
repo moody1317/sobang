@@ -3,6 +3,8 @@ import DashboardLayout from '../layouts/dashboardlayout';
 import { useUser } from '../contexts/usercontext';
 import './briefing.css';
 
+const LEVEL_CLASS = { 위험: 'danger', 경계: 'caution', 주의: 'warning', 안전: 'safe' };
+
 const MOCK_PRIORITY = [
   { rank: 1, name: '중앙동', type: '구급', dispatch: 524, score: 88, level: '위험' },
   { rank: 2, name: '성안동', type: '구급', dispatch: 478, score: 84, level: '위험' },
@@ -10,13 +12,13 @@ const MOCK_PRIORITY = [
 ];
 
 const MOCK_DISTRIBUTION = [
-  { label: '위험', color: '#dc2626', count: 3, total: 15 },
-  { label: '경계', color: '#f97316', count: 6, total: 15 },
-  { label: '주의', color: '#eab308', count: 5, total: 15 },
-  { label: '안전', color: '#22c55e', count: 1, total: 15 },
+  { label: '위험', cls: 'danger', count: 3, total: 15 },
+  { label: '경계', cls: 'caution', count: 6, total: 15 },
+  { label: '주의', cls: 'warning', count: 5, total: 15 },
+  { label: '안전', cls: 'safe', count: 1, total: 15 },
 ];
 
-const SCORE_LEVEL = { label: '경계', color: '#f97316' };
+const SCORE_LEVEL = '경계';
 
 function formatDate() {
   const days = ['일', '월', '화', '수', '목', '금', '토'];
@@ -32,9 +34,8 @@ function getGreeting() {
 }
 
 function ScoreBadge({ level, score }) {
-  const colors = { 위험: '#dc2626', 경계: '#f97316', 주의: '#eab308', 안전: '#22c55e' };
   return (
-    <span className="score-badge" style={{ color: colors[level] ?? '#6b7280' }}>
+    <span className={`score-badge score-badge--${LEVEL_CLASS[level] ?? ''}`}>
       {level} <strong>{score}</strong>
     </span>
   );
@@ -45,15 +46,12 @@ function Briefing() {
 
   return (
     <div className="briefing">
-
       <div className="briefing-greeting-row">
         <div>
           <h1 className="briefing-greeting">
             {user?.name ?? '대원'}님, {getGreeting()}
           </h1>
-          <p className="briefing-meta">
-            {formatDate()} · 주간 근무 · 관할 {user?.district_name ?? '—'}
-          </p>
+          <p className="briefing-meta">{formatDate()}</p>
         </div>
         <Link to="/dashboard/map" className="btn-map">
           위험 지도 열기 <i className="bi bi-arrow-right" />
@@ -67,11 +65,8 @@ function Briefing() {
             64 <span className="stat-card-unit">/100</span>
           </div>
           <div className="stat-card-footer">
-            <span
-              className="level-chip"
-              style={{ background: '#fff7ed', color: '#f97316' }}
-            >
-              {SCORE_LEVEL.label}
+            <span className={`level-chip level-chip--${LEVEL_CLASS[SCORE_LEVEL]}`}>
+              {SCORE_LEVEL}
             </span>
             <span className="stat-card-change up">
               <i className="bi bi-caret-up-fill" /> 3.2 vs 지난달
@@ -83,12 +78,7 @@ function Briefing() {
           <p className="stat-card-label">최고 위험 구역</p>
           <div className="stat-card-value">중앙동</div>
           <div className="stat-card-footer">
-            <span
-              className="level-chip"
-              style={{ background: '#fef2f2', color: '#dc2626' }}
-            >
-              위험 88
-            </span>
+            <span className="level-chip level-chip--danger">위험 88</span>
             <span className="stat-card-note">구급 출동 집중</span>
           </div>
         </div>
@@ -107,8 +97,8 @@ function Briefing() {
 
         <div className="stat-card">
           <p className="stat-card-label">위험 등급 구역</p>
-          <div className="stat-card-value" style={{ color: '#dc2626' }}>
-            3 <span className="stat-card-unit" style={{ color: '#dc2626' }}>곳</span>
+          <div className="stat-card-value stat-card-value--danger">
+            3 <span className="stat-card-unit">곳</span>
           </div>
           <div className="stat-card-footer">
             <span className="stat-card-note">전체 15개 행정구역 중</span>
@@ -146,20 +136,14 @@ function Briefing() {
             {MOCK_DISTRIBUTION.map((item) => (
               <div key={item.label} className="distribution-item">
                 <div className="distribution-row">
-                  <span
-                    className="distribution-dot"
-                    style={{ background: item.color }}
-                  />
+                  <span className={`distribution-dot distribution-dot--${item.cls}`} />
                   <span className="distribution-label">{item.label}</span>
                   <span className="distribution-count">{item.count}곳</span>
                 </div>
                 <div className="distribution-bar-track">
                   <div
-                    className="distribution-bar-fill"
-                    style={{
-                      width: `${(item.count / item.total) * 100}%`,
-                      background: item.color,
-                    }}
+                    className={`distribution-bar-fill distribution-bar-fill--${item.cls}`}
+                    style={{ width: `${(item.count / item.total) * 100}%` }}
                   />
                 </div>
               </div>

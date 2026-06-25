@@ -5,6 +5,7 @@ from app.api.deps import get_current_user, get_current_active_user, get_db_sessi
 from app.models.user import User
 from app.schemas.auth import LoginRequest, TokenResponse, PasswordChangeRequest
 from app.schemas.user import UserResponse
+from app.models.station import Station
 from app.services.auth_service import authenticate_user, create_user_token, change_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -53,5 +54,11 @@ def change_my_password(
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/me", response_model=UserResponse)
-def read_me(current_user: User = Depends(get_current_active_user)):
-    return current_user
+def read_me(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db_session),
+    ):
+    station = db.query(Station).filter(Station.id == current_user.station_id).first()
+    user_dict = UserResponse.model_validate(current_user).model_dump()
+    user_dict["station_name"] = station.station_name if station else None
+    return UserResponse(**user_dict)

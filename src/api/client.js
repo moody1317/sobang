@@ -17,6 +17,8 @@ client.interceptors.request.use((config) => {
 client.interceptors.response.use(
     (response) => response,
     (error) => {
+        const isLoginRequest = error.config?.url?.includes("/auth/login");
+        
         if (error.response?.status === 401) {
             localStorage.removeItem("access_token");
             localStorage.removeItem("must_change_password");

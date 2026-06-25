@@ -45,20 +45,19 @@
     gap: 10px;
     padding: 14px 16px;
     background-color: var(--color-brand-alert);
+    color: var(--color-brand);
     border-radius: var(--radius-input);
     margin-bottom: 28px;
 }
 
 .findpw-notice > i {
     font-size: 16px;
-    color: var(--color-brand);
-    margin-top: 2px;
+    margin-top: 0px;
     flex-shrink: 0;
 }
 
 .findpw-notice > p {
     font-size: 13px;
-    color: var(--color-text-secondary);
     margin: 0;
     line-height: 1.5;
 }

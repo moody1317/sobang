@@ -1,31 +1,33 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/authlayout';
-import { login, getMostChangePassword } from '../../../api/auth';
+import { login, getMustChangePassword } from '../../../api/auth';
 import './login.css';
 
 function Login() {
-  const [rememberMe, setRememberMe] = useState(false);
   const [showPW, setShowPW] = useState(false);
   const [firefighterNumber, setFirefighterNumber] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const errorTimerRef = useRef(null);
   const navigate = useNavigate();
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setError('');
 
     try {
       await login(firefighterNumber, password);
 
-      if (getMostChangePassword()) {
+      if (getMustChangePassword()) {
         navigate('/change-password');
       } else {
         navigate('/dashboard');
       }
     } catch (err) {
+      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
       setError(err.response?.data?.detail || '로그인에 실패했습니다.');
+      errorTimerRef.current = setTimeout(() => setError(''), 4000);
     }
   }
 
@@ -45,6 +47,8 @@ function Login() {
               type="text"
               className="form-input"
               placeholder="cjsd0123"
+              value={firefighterNumber}
+              onChange={(e) => setFirefighterNumber(e.target.value)}
             />
           </div>
 
@@ -55,6 +59,8 @@ function Login() {
                 type={showPW ? 'text' : 'password'}
                 className="form-input"
                 placeholder='비밀번호를 입력하세요.'
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
               <button
                 type="button"
@@ -65,6 +71,13 @@ function Login() {
               </button>
             </div>
           </div>
+
+          {error && (
+            <div className="login-error">
+              <i className="bi bi-exclamation-circle-fill" />
+              <span>{error}</span>
+            </div>
+          )}
 
           <Link to="/findpw" className="forgot-link">비밀번호 찾기</Link>
 

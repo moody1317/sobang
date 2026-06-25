@@ -15,7 +15,7 @@ export async function login(firefighterNumber, password, rememberMe = true) {
     return response.data;
 }
 
-export async function changePassword(currentPassword, nedwPassword) {
+export async function changePassword(currentPassword, newPassword) {
     const response = await client.post("/auth/change-password", {
         current_password: currentPassword,
         new_password: newPassword,

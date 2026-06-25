@@ -66,16 +66,7 @@ function Login() {
             </div>
           </div>
 
-          <div className="login-options">
-            <label className="remember-label" onClick={() => setRememberMe(prev => !prev)}>
-              <i
-                className={`bi bi-check-square${rememberMe ? '-fill' : ''}`}
-                style={rememberMe ? { color: 'var(--color-brand-mid)' } : undefined}
-              />
-              <span>로그인 유지</span>
-            </label>
-            <Link to="/findpw" className="forgot-link">비밀번호 찾기</Link>
-          </div>
+          <Link to="/findpw" className="forgot-link">비밀번호 찾기</Link>
 
           <button type="submit" className="login-btn">로그인</button>
         </form>

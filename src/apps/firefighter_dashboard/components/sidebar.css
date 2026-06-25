@@ -52,6 +52,8 @@
     border: 1px solid var(--color-border-inner);
     border-radius: 10px;
     padding: 10px 12px;
+    margin-left: 10px;
+    width: 90%;
 }
 
 .sidebar-station-name {
@@ -59,12 +61,6 @@
   font-weight: 700;
   color: var(--color-text-primary);
   line-height: 1.4;
-}
-
-.sidebar-station-sub {
-  font-size: 11px;
-  color: var(--color-text-label);
-  margin-top: 2px;
 }
 
 .sidebar-nav {

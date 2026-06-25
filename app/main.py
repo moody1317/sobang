@@ -8,6 +8,8 @@ import app.api.v1.station as stations
 from app.core.database import Base, engine
 import app.models.station
 import app.models.user
+import app.models.safety_center
+
 
 app = FastAPI(
     title="Sobang Backend",

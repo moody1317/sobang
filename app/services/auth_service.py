@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import create_access_token, generate_temp_password, hash_password, verify_password, check_brute_force, record_failed_attempt, clear_attempts
 from app.models.user import User
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, ProfileUpdateRequest
 
 from app.models.station import Station
 
@@ -131,3 +131,20 @@ def reset_user_password(db: Session, firefighter_number: str) -> tuple[User, str
     db.refresh(user)
 
     return user, temp_password
+
+def update_profile(db: Session, user: User, data: "ProfileUpdateRequest") -> User:
+    if not verify_password(data.current_password, user.password_hash):
+        raise ValueError("현재 비밀번호가 올바르지 않습니다.")
+    
+    if data.email is not None:
+        existing = get_user_by_email(db, data.email)
+        if existing and existing.id != user.id:
+            raise ValueError("이미 사용 중인 이메일입니다.")
+        user.email = data.email
+
+    if data.phone_number is not None:
+        user.phone_number = data.phone_number
+        
+    db.commit()
+    db.refresh(user)
+    return user

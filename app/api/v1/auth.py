@@ -3,10 +3,11 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_current_active_user, get_db_session
 from app.models.user import User
-from app.schemas.auth import LoginRequest, TokenResponse, PasswordChangeRequest
-from app.schemas.user import UserResponse
+from app.schemas.auth import LoginRequest, TokenResponse, PasswordChangeRequest, PasswordVerifyRequest
+from app.schemas.user import UserResponse, ProfileUpdateRequest
 from app.models.station import Station
-from app.services.auth_service import authenticate_user, create_user_token, change_password
+from app.services.auth_service import authenticate_user, create_user_token, change_password, update_profile
+from app.core.security import verify_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -62,3 +63,28 @@ def read_me(
     user_dict = UserResponse.model_validate(current_user).model_dump()
     user_dict["station_name"] = station.station_name if station else None
     return UserResponse(**user_dict)
+
+@router.patch("/me", response_model=UserResponse)
+def update_my_profile(
+    data: ProfileUpdateRequest,
+    db: Session = Depends(get_db_session),
+    current_user: User = Depends(get_current_active_user),
+):
+    try: 
+        updated_user = update_profile(db, current_user, data)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    station = db.query(Station).filter(Station.id == updated_user.station_id).first()
+    user_dict = UserResponse.model_validate(updated_user).model_dump()
+    user_dict["station_name"] = station.station_name if station else None
+    return UserResponse(**user_dict)
+
+@router.post("/verify-password")
+def verify_my_password(
+    data: PasswordVerifyRequest,
+    current_user: User = Depends(get_current_user),
+):
+    if not verify_password(data.password, current_user.password_hash):
+        raise HTTPException(status_code=400, detail="비밀번호가 일치하지 않습니다.")
+    return {"verified": True}

@@ -33,3 +33,8 @@ class UserResponse(UserBase):
 
 class UserCreateResponse(UserResponse):
     temp_password: str
+
+class ProfileUpdateRequest(BaseModel):
+    current_password: str
+    email: Optional[EmailStr] = None
+    phone_number: Optional[str] = None

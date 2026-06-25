@@ -38,3 +38,8 @@ export function getMustChangePassword() {
 export function isLoggedIn() {
     return !!localStorage.getItem("access_token");
 }
+
+export async function getMe() {
+    const response = await client.get("/auth/me");
+    return response.data;
+}

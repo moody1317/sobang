@@ -8,10 +8,10 @@ class Settings(BaseSettings):
     DB_HOST: str = "127.0.0.1"
     DB_PORT: int = 3306
     DB_USER: str = "root"
-    DB_PASSWORD: str = "1019"
+    DB_PASSWORD: str
     DB_NAME: str = "sobang_db"
 
-    SECRET_KEY: str = "보안키"
+    SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 

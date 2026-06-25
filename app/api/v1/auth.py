@@ -14,11 +14,17 @@ def login(
     login_data: LoginRequest,
     db: Session = Depends(get_db_session),
 ):
-    user = authenticate_user(
-        db=db,
-        firefighter_number=login_data.firefighter_number,
-        password=login_data.password,
-    )
+    try:
+        user = authenticate_user(
+            db=db,
+            firefighter_number=login_data.firefighter_number,
+            password=login_data.password,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=str(e),
+        )
 
     if not user:
         raise HTTPException(

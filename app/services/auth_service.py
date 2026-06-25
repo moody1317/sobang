@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from app.core.security import create_access_token, generate_temp_password, hash_password, verify_password
+from app.core.security import create_access_token, generate_temp_password, hash_password, verify_password, check_brute_force, record_failed_attempt, clear_attempts
 from app.models.user import User
 from app.schemas.user import UserCreate
 
@@ -68,17 +68,18 @@ def get_user_by_email(db: Session, email: str):
     return db.query(User).filter(User.email == email).first()
 
 def authenticate_user(db: Session, firefighter_number: str, password: str):
+    check_brute_force(firefighter_number)
+
     user = get_user_by_firefighter_number(db, firefighter_number)
 
-    if not user:
-        return None
-    
-    if not verify_password(password, user.password_hash):
+    if not user or not verify_password(password, user.password_hash):
+        record_failed_attempt(firefighter_number)
         return None
     
     if not user.is_active:
         return None
     
+    clear_attempts(firefighter_number)
     return user
 
 def create_user_token(user: User) -> str:
@@ -116,3 +117,17 @@ def create_user(db: Session, user_data: UserCreate) -> tuple[User, str]:
     db.refresh(new_user)
 
     return new_user, temp_password
+
+def reset_user_password(db: Session, firefighter_number: str) -> tuple[User, str]:
+    user = get_user_by_firefighter_number(db, firefighter_number)
+    if not user:
+        raise ValueError("존재하지 않는 대원번호입니다.")
+
+    temp_password = generate_temp_password()
+    user.password_hash = hash_password(temp_password)
+    user.must_change_password = True
+
+    db.commit()
+    db.refresh(user)
+
+    return user, temp_password

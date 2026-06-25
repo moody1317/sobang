@@ -1,14 +1,32 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/authlayout';
+import { login, getMostChangePassword } from '../../../api/auth';
 import './login.css';
 
 function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPW, setShowPW] = useState(false);
+  const [firefighterNumber, setFirefighterNumber] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   function handleSubmit(e) {
     e.preventDefault();
+    setError('');
+
+    try {
+      await login(firefighterNumber, password);
+
+      if (getMostChangePassword()) {
+        navigate('/change-password');
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (err) {
+      setError(err.response?.data?.detail || '로그인에 실패했습니다.');
+    }
   }
 
   return (

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_current_active_user, get_db_session
-from app.models.user import User
+from app.models.user import User, UnitType
 from app.schemas.auth import LoginRequest, TokenResponse, PasswordChangeRequest, PasswordVerifyRequest
 from app.schemas.user import UserResponse, ProfileUpdateRequest
 from app.models.station import Station
@@ -59,13 +59,21 @@ def change_my_password(
 def read_me(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db_session),
-    ):
+):
     station = db.query(Station).filter(Station.id == current_user.station_id).first()
-    safety_center = db.query(SafetyCenter).filter(SafetyCenter.id == current_user.safety_center_id).first()
+    station_name = station.station_name if station else None
+
+    if current_user.unit_type == UnitType.SAFETY_CENTER:
+        safety_center = db.query(SafetyCenter).filter(
+            SafetyCenter.id == current_user.safety_center_id
+        ).first()
+        unit_name = safety_center.center_name if safety_center else station_name
+    else:
+        unit_name = current_user.unit_type.value 
 
     user_dict = UserResponse.model_validate(current_user).model_dump()
-    user_dict["station_name"] = station.station_name if station else None
-    user_dict["unit_name"] = safety_center.center_name if safety_center else None
+    user_dict["station_name"] = station_name
+    user_dict["unit_name"] = unit_name
     return UserResponse(**user_dict)
 
 @router.patch("/me", response_model=UserResponse)
@@ -74,14 +82,25 @@ def update_my_profile(
     db: Session = Depends(get_db_session),
     current_user: User = Depends(get_current_active_user),
 ):
-    try: 
+    try:
         updated_user = update_profile(db, current_user, data)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    
+
     station = db.query(Station).filter(Station.id == updated_user.station_id).first()
+    station_name = station.station_name if station else None
+
+    if updated_user.unit_type == UnitType.SAFETY_CENTER:
+        safety_center = db.query(SafetyCenter).filter(
+            SafetyCenter.id == updated_user.safety_center_id
+        ).first()
+        unit_name = safety_center.center_name if safety_center else station_name
+    else:
+        unit_name = updated_user.unit_type.value
+
     user_dict = UserResponse.model_validate(updated_user).model_dump()
-    user_dict["station_name"] = station.station_name if station else None
+    user_dict["station_name"] = station_name
+    user_dict["unit_name"] = unit_name
     return UserResponse(**user_dict)
 
 @router.post("/verify-password")

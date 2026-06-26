@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.core.security import create_access_token, generate_temp_password, hash_password, verify_password, check_brute_force, record_failed_attempt, clear_attempts
-from app.models.user import User
+from app.models.user import User, UnitType
 from app.schemas.user import UserCreate, ProfileUpdateRequest
 
 from app.models.station import Station
@@ -71,26 +71,30 @@ def create_user(db: Session, user_data: UserCreate) -> tuple[User, str]:
     if existing_user:
         raise ValueError("이미 사용 중인 이메일입니다.")
 
-    if user_data.safety_center_id is not None:
+    safety_center_id = None
+    if user_data.unit_type == UnitType.SAFETY_CENTER:
+        if user_data.safety_center_id is not None:
             center = db.query(SafetyCenter).filter(
                 SafetyCenter.id == user_data.safety_center_id,
                 SafetyCenter.station_id == user_data.station_id,
             ).first()
             if not center:
                 raise ValueError("선택한 안전센터가 해당 소방서 소속이 아닙니다.")
-            
-    firefighter_number = generate_firefighter_number(db, user_data.station_id)
-    temp_password = generate_temp_password()
+            safety_center_id = user_data.safety_center_id
+                
+        firefighter_number = generate_firefighter_number(db, user_data.station_id)
+        temp_password = generate_temp_password()
 
     new_user = User(
         firefighter_number=firefighter_number,
         name=user_data.name,
         email=user_data.email,
-        password_hash=hash_password(temp_password),   # ← user_data.password 대신 temp_password
+        password_hash=hash_password(temp_password),   
         role=user_data.role,
         rank=user_data.rank,
         phone_number=user_data.phone_number,
         station_id=user_data.station_id,
+        unit_type=user_data.unit_type,
         safety_center_id=user_data.safety_center_id,
         is_active=True,
         must_change_password=True,

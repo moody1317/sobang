@@ -1,9 +1,17 @@
-# 소방대원 DB
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
+from enum import Enum as PyEnum
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Enum as SAEnum
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.core.database import Base
+
+class UnitType(PyEnum):
+    HEADQUARTERS = "본서"
+    SAFETY_CENTER = "안전센터"
+    AMBULANCE = "구급대"
+    AVIATION = "항공대"
+    SPECIAL_RESPONSE = "특수대응단"
+    OTHER = "기타"
 
 class User(Base):
     __tablename__ = "users"
@@ -13,14 +21,12 @@ class User(Base):
     name = Column(String(50), nullable=False)
     email = Column(String(100), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
-
     role = Column(String(30), nullable=False, default="firefighter")
     rank = Column(String(30), nullable=True)
     phone_number = Column(String(30), nullable=True)
-
     station_id = Column(Integer, ForeignKey("stations.id"), nullable=False)
+    unit_type = Column(SAEnum(UnitType), default=UnitType.HEADQUARTERS, nullable=False)
     safety_center_id = Column(Integer, ForeignKey("safety_centers.id"), nullable=True)
-
     is_active = Column(Boolean, default=True, nullable=False)
     must_change_password = Column(Boolean, default=True, nullable=False)
 

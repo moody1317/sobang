@@ -43,3 +43,13 @@ export async function getMe() {
     const response = await client.get("/auth/me");
     return response.data;
 }
+
+export async function verifyPassword(password) {
+    const response = await client.post("/auth/verify-password", { password });
+    return response.data;
+}
+
+export async function updateProfile(data) {
+    const response = await client.patch("/auth/me", data);
+    return response.data;
+}

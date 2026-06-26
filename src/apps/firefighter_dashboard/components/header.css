@@ -86,10 +86,10 @@
   background: var(--color-bg-surface-2);
 }
 
-/* User */
 .header-user {
   display: flex;
   align-items: center;
+  text-decoration: none;
   gap: 10px;
   cursor: pointer;
   padding: 4px 8px;
@@ -99,6 +99,10 @@
 
 .header-user:hover {
   background: var(--color-bg-surface-2);
+}
+
+.header-user:active {
+  text-decoration: none;
 }
 
 .header-avatar {

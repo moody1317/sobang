@@ -4,6 +4,7 @@ import { isLoggedIn } from '../../../api/auth';
 
 export const UserContext = createContext(null);
 export const useUser = () => useContext(UserContext)?.user ?? null;
+export const useRefreshUser = () => useContext(UserContext)?.refreshUser;
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);

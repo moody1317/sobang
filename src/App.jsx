@@ -4,6 +4,7 @@ import ProtectedRoute from './shared/components/ProtectedRoute';
 import Login from './apps/firefighter_dashboard/pages/login';
 import FindPW from './apps/firefighter_dashboard/pages/findpw';
 import BriefingPage from './apps/firefighter_dashboard/pages/briefing';
+import MyPagePage from './apps/firefighter_dashboard/pages/mypage';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './shared/style/global.css';
 
@@ -19,6 +20,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <BriefingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/dashboard/profile'
+            element={
+              <ProtectedRoute>
+                <MyPagePage />
               </ProtectedRoute>
             }
           />

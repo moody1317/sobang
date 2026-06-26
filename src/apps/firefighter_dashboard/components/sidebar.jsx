@@ -54,6 +54,7 @@ function Sidebar() {
       {user && (
         <div className="sidebar-station">
           <div className="sidebar-station-name">{user.station_name}</div>
+          <div className='sidebar-station-sub'>{user.unit_name}</div>
         </div>
       )}
 

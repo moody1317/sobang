@@ -1,4 +1,4 @@
-import { useLocation } from 'react-router-dom';
+import { useLocation, NavLink } from 'react-router-dom';
 import { useUser } from '../contexts/usercontext';
 import './header.css';
 
@@ -56,17 +56,17 @@ function Header() {
           <i className="bi bi-bell" />
         </button>
 
-        <div className="header-user">
+        <NavLink to="/dashboard/profile" className="header-user">
           <div className="header-avatar">{initial}</div>
           {user && (
             <div className="header-user-info">
               <span className="header-user-name">{user.name}</span>
               <span className="header-user-role">
-                {user.rank} {user.unit_name}
+                {user.rank}
               </span>
             </div>
           )}
-        </div>
+        </NavLink>
       </div>
     </header>
   );

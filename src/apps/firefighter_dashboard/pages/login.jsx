@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/authlayout';
 import { login, getMustChangePassword } from '../../../api/auth';
+import { useRefreshUser } from '../contexts/usercontext';
 import './login.css';
 
 function Login() {
@@ -11,6 +12,7 @@ function Login() {
   const [error, setError] = useState('');
   const errorTimerRef = useRef(null);
   const navigate = useNavigate();
+  const refreshUser = useRefreshUser();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -18,6 +20,7 @@ function Login() {
 
     try {
       await login(firefighterNumber, password);
+      await refreshUser();
 
       if (getMustChangePassword()) {
         navigate('/change-password');

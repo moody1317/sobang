@@ -49,6 +49,15 @@
   color: var(--color-text-secondary);
 }
 
+.form-error {
+  font-size: 11px;
+  color: var(--color-error);
+}
+
+.form-input.is-error {
+  border-color: var(--color-error);
+}
+
 .form-input {
   height: 46px;
   padding: 0 14px;

@@ -53,3 +53,23 @@ export async function updateProfile(data) {
     const response = await client.patch("/auth/me", data);
     return response.data;
 }
+
+export async function getStationUsers() {
+    const response = await client.get("/admin/users");
+    return response.data;
+}
+
+export async function createUser(data) {
+    const response = await client.post("/admin/users", data);
+    return response.data;
+}
+
+export async function getSafetyCenters() {
+    const response = await client.get("/stations/safety-centers");
+    return response.data;
+}
+
+export async function resetUserPassword(firefighterNumber) {
+    const response = await client.post(`/admin/users/${firefighterNumber}/reset-password`);
+    return response.data;
+}

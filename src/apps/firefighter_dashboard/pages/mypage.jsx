@@ -274,7 +274,7 @@ function MyPage() {
               <span className="mypage-name">{user?.name ?? '—'}</span>
               {user?.rank && <span className="mypage-rank-chip">{user.rank}</span>}
             </div>
-            <span className="mypage-station">{user?.station_name} - {user.unit_name} </span>
+            <span className="mypage-station">{user?.station_name} - {user?.unit_name}</span>
           </div>
         </div>
         <button className="mypage-edit-btn" onClick={() => setStep('verify')}>

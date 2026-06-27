@@ -25,7 +25,7 @@ const NAV_SECTIONS = [
     label: '정보',
     items: [
       { to: '/dashboard/data', icon: 'bi-database', label: '데이터·방법론' },
-      { to: '/dashboard/admin', icon: 'bi-shield-check', label: '관리자' },
+      { to: '/dashboard/admin', icon: 'bi-shield-check', label: '관리자', adminOnly: true },
     ],
   },
 ];
@@ -33,6 +33,7 @@ const NAV_SECTIONS = [
 function Sidebar() {
   const user = useUser();
   const navigate = useNavigate();
+  const isAdmin = user?.rank === '관리자';
 
   function handleLogout() {
     logout();
@@ -62,7 +63,7 @@ function Sidebar() {
         {NAV_SECTIONS.map((section) => (
           <div key={section.label}>
             <div className="sidebar-section-label">{section.label}</div>
-            {section.items.map((item) => (
+            {section.items.filter((item) => !item.adminOnly || isAdmin).map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}

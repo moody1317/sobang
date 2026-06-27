@@ -5,6 +5,8 @@ import Login from './apps/firefighter_dashboard/pages/login';
 import FindPW from './apps/firefighter_dashboard/pages/findpw';
 import BriefingPage from './apps/firefighter_dashboard/pages/briefing';
 import MyPagePage from './apps/firefighter_dashboard/pages/mypage';
+import AdminPage from './apps/firefighter_dashboard/pages/admin';
+import ChangePassword from './apps/firefighter_dashboard/pages/changepw';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './shared/style/global.css';
 
@@ -15,6 +17,14 @@ function App() {
         <Routes>
           <Route path='/' element={<Login />} />
           <Route path='/findpw' element={<FindPW />}/>
+          <Route
+            path='/change-password'
+            element={
+              <ProtectedRoute>
+                <ChangePassword />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path='/dashboard'
             element={
@@ -28,6 +38,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <MyPagePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/dashboard/admin'
+            element={
+              <ProtectedRoute>
+                <AdminPage />
               </ProtectedRoute>
             }
           />

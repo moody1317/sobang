@@ -15,7 +15,7 @@ def generate_firefighter_number(db: Session, station_id: int) -> str:
     seq = db.query(User).filter(User.station_id == station_id).count() + 1
 
     while True:
-        candidate = f"{station.station_code}-{seq:04d}"
+        candidate = f"{station.station_code}{seq:04d}"
         if not get_user_by_firefighter_number(db, candidate):
             return candidate
         seq += 1
@@ -82,8 +82,8 @@ def create_user(db: Session, user_data: UserCreate) -> tuple[User, str]:
                 raise ValueError("선택한 안전센터가 해당 소방서 소속이 아닙니다.")
             safety_center_id = user_data.safety_center_id
                 
-        firefighter_number = generate_firefighter_number(db, user_data.station_id)
-        temp_password = generate_temp_password()
+    firefighter_number = generate_firefighter_number(db, user_data.station_id)
+    temp_password = generate_temp_password()
 
     new_user = User(
         firefighter_number=firefighter_number,
@@ -95,7 +95,7 @@ def create_user(db: Session, user_data: UserCreate) -> tuple[User, str]:
         phone_number=user_data.phone_number,
         station_id=user_data.station_id,
         unit_type=user_data.unit_type,
-        safety_center_id=user_data.safety_center_id,
+        safety_center_id=safety_center_id,
         is_active=True,
         must_change_password=True,
     )
@@ -136,3 +136,11 @@ def update_profile(db: Session, user: User, data: "ProfileUpdateRequest") -> Use
     db.commit()
     db.refresh(user)
     return user
+
+def get_users_by_station(db: Session, station_id: int):
+    return (
+        db.query(User)
+        .filter(User.station_id == station_id)
+        .order_by(User.created_at.desc())
+        .all()
+    )

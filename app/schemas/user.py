@@ -44,3 +44,18 @@ class ProfileUpdateRequest(BaseModel):
     current_password: str
     email: Optional[EmailStr] = None
     phone_number: Optional[str] = None
+
+class UserListResponse(BaseModel):
+    id: int
+    firefighter_number: str
+    name: str
+    email: EmailStr
+    rank: Optional[str] = None
+    phone_number: Optional[str] = None
+    unit_type: str
+    station_name: Optional[str] = None
+    unit_name: Optional[str] = None
+    is_active: bool
+
+    class Config:
+        from_attributes = True

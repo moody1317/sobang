@@ -25,7 +25,11 @@ class User(Base):
     rank = Column(String(30), nullable=True)
     phone_number = Column(String(30), nullable=True)
     station_id = Column(Integer, ForeignKey("stations.id"), nullable=False)
-    unit_type = Column(SAEnum(UnitType), default=UnitType.HEADQUARTERS, nullable=False)
+    unit_type = Column(
+        SAEnum(UnitType, values_callable=lambda x: [e.value for e in x]),
+        default=UnitType.HEADQUARTERS,
+        nullable=False,
+    )
     safety_center_id = Column(Integer, ForeignKey("safety_centers.id"), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     must_change_password = Column(Boolean, default=True, nullable=False)

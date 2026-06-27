@@ -2,9 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db_session, require_admin
-from app.models.user import User
-from app.schemas.user import UserCreate, UserCreateResponse, UserResponse
-from app.services.auth_service import create_user, reset_user_password
+from app.models.user import User, UnitType
+from app.models.safety_center import SafetyCenter
+from app.schemas.user import UserCreate, UserResponse, UserCreateResponse, UserListResponse
+from app.services.auth_service import create_user, reset_user_password, get_users_by_station
+from app.models.station import Station
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -41,3 +43,28 @@ def reset_password(
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    
+@router.get("/users", response_model=list[UserListResponse])
+def list_users(
+    db: Session = Depends(get_db_session),
+    admin_user: User = Depends(require_admin),
+):
+    users = get_users_by_station(db, admin_user.station_id)
+
+    station = db.query(Station).filter(Station.id == admin_user.station_id).first()
+    station_name = station.station_name if station else None
+
+    result = []
+    for u in users:
+        if u.unit_type == UnitType.SAFETY_CENTER:
+            center = db.query(SafetyCenter).filter(SafetyCenter.id == u.safety_center_id).first()
+            unit_name = center.center_name if center else None
+        else:
+            unit_name = u.unit_type.value
+
+        user_dict = UserListResponse.model_validate(u).model_dump()
+        user_dict["station_name"] = station_name
+        user_dict["unit_name"] = unit_name
+        result.append(UserListResponse(**user_dict))
+
+    return result

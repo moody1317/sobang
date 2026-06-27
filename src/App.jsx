@@ -7,6 +7,7 @@ import BriefingPage from './apps/firefighter_dashboard/pages/briefing';
 import MyPagePage from './apps/firefighter_dashboard/pages/mypage';
 import AdminPage from './apps/firefighter_dashboard/pages/admin';
 import ChangePassword from './apps/firefighter_dashboard/pages/changepw';
+import DataPagePage from './apps/firefighter_dashboard/pages/data';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './shared/style/global.css';
 
@@ -46,6 +47,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <AdminPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/dashboard/data'
+            element={
+              <ProtectedRoute>
+                <DataPagePage />
               </ProtectedRoute>
             }
           />

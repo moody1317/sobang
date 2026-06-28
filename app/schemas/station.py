@@ -20,7 +20,7 @@ class StationResponse(StationCreate):
 
 class SafetyCenterResponse(BaseModel):
     id: int
-    center_name: str
+    station_name: str   
 
     class Config:
         from_attributes = True

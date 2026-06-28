@@ -4,10 +4,23 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db_session, require_admin
 from app.services.station_service import fetch_station_data, sync_all_stations
 
-from app.models.safety_center import SafetyCenter
 from app.schemas.station import SafetyCenterResponse
+from app.models.station import Station
 
-from app.models.user import User
+from app.models.user import User, UnitType
+from app.models.safety_center import SafetyCenter
+from app.models.ambulance_unit import AmbulanceUnit
+from app.models.aviation_unit import AviationUnit
+from app.models.special_response_unit import SpecialResponseUnit
+from app.models.local_unit import LocalUnit
+
+UNIT_TABLE_MAP = {
+    "안전센터": SafetyCenter,
+    "구급대": AmbulanceUnit,
+    "항공대": AviationUnit,
+    "특수대응단": SpecialResponseUnit,
+    "지역대": LocalUnit,
+}
 
 router = APIRouter(prefix="/stations", tags=["stations"])
 
@@ -36,14 +49,19 @@ def sync_station_data(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"sync error: {e}")
     
-@router.get("/safety-centers", response_model=list[SafetyCenterResponse])
-def get_my_station_safety_centers(
+@router.get("/units")
+def get_units_by_type(
+    unit_type: str = Query(..., description="안전센터/구급대/항공대/특수대응단/지역대"),
     db: Session = Depends(get_db_session),
     admin_user: User = Depends(require_admin),
 ):
-    centers = (
-        db.query(SafetyCenter)
-        .filter(SafetyCenter.station_id == admin_user.station_id)
+    model = UNIT_TABLE_MAP.get(unit_type)
+    if not model:
+        raise HTTPException(status_code=400, detail="유효하지 않은 소속 유형입니다.")
+
+    items = (
+        db.query(model)
+        .filter(model.parent_station_id == admin_user.station_id)
         .all()
     )
-    return centers
+    return [{"id": item.id, "name": item.station_name} for item in items]

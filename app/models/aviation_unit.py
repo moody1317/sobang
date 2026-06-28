@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from app.core.database import Base
 
-class SafetyCenter(Base):
-    __tablename__ = "safety_centers_v2"
+class AviationUnit(Base):
+    __tablename__ = "aviation_units"
     id = Column(Integer, primary_key=True)
     station_code = Column(String(30), unique=True)
     station_name = Column(String(100), nullable=False)

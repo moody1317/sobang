@@ -9,8 +9,27 @@ from app.models.station import Station
 from app.services.auth_service import authenticate_user, create_user_token, change_password, update_profile
 from app.core.security import verify_password
 from app.models.safety_center import SafetyCenter
+from app.models.ambulance_unit import AmbulanceUnit
+from app.models.aviation_unit import AviationUnit
+from app.models.special_response_unit import SpecialResponseUnit
+from app.models.local_unit import LocalUnit
+
+UNIT_TABLE_MAP = {
+    UnitType.SAFETY_CENTER: SafetyCenter,
+    UnitType.AMBULANCE: AmbulanceUnit,
+    UnitType.AVIATION: AviationUnit,
+    UnitType.SPECIAL_RESPONSE: SpecialResponseUnit,
+    UnitType.LOCAL_UNIT: LocalUnit,
+}
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+def resolve_unit_name(db: Session, user: User, station_name: str) -> str:
+    model = UNIT_TABLE_MAP.get(user.unit_type)
+    if model is not None and user.safety_center_id:
+        unit = db.query(model).filter(model.id == user.safety_center_id).first()
+        return unit.station_name if unit else station_name
+    return user.unit_type.value  # 본서, 기타 등
 
 @router.post("/login", response_model=TokenResponse)
 def login(
@@ -62,14 +81,7 @@ def read_me(
 ):
     station = db.query(Station).filter(Station.id == current_user.station_id).first()
     station_name = station.station_name if station else None
-
-    if current_user.unit_type == UnitType.SAFETY_CENTER:
-        safety_center = db.query(SafetyCenter).filter(
-            SafetyCenter.id == current_user.safety_center_id
-        ).first()
-        unit_name = safety_center.center_name if safety_center else station_name
-    else:
-        unit_name = current_user.unit_type.value 
+    unit_name = resolve_unit_name(db, current_user, station_name)
 
     user_dict = UserResponse.model_validate(current_user).model_dump()
     user_dict["station_name"] = station_name

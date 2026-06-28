@@ -10,6 +10,8 @@ class Station(Base):
     id = Column(Integer, primary_key=True, index=True)
     station_code = Column(String(20), unique=True, nullable=False, index=True)
     station_name = Column(String(100), nullable=False)
+    fclty_ty = Column(String(50), nullable=True)
+    unit_type = Column(String(20), nullable=True)
     region_name = Column(String(100), nullable=True)
     address = Column(String(255), nullable=True)
     phone_number = Column(String(30), nullable=True)

@@ -78,6 +78,10 @@ def upsert_stations(db: Session, station_list: list[dict]) -> dict:
     created, updated = 0, 0
 
     for s in station_list:
+        fclty_ty = s.get("fclty_ty", "")
+        fclty_nm = s.get("fclty_nm", "")
+        unit_type = classify_unit_type(fclty_ty, fclty_nm)
+
         existing = (
             db.query(Station)
             .filter(Station.station_code == s["objt_id"])
@@ -85,19 +89,21 @@ def upsert_stations(db: Session, station_list: list[dict]) -> dict:
         )
 
         if existing:
-            existing.station_name = s.get("fclty_nm", existing.station_name)
+            existing.station_name = fclty_nm or existing.station_name
+            existing.fclty_ty = fclty_ty or existing.fclty_ty
+            existing.unit_type = unit_type
             existing.address = s.get("rn_adres", existing.address)
             existing.phone_number = s.get("telno", existing.phone_number)
             updated += 1
         else:
-            db.add(
-                Station(
-                    station_code=s["objt_id"],
-                    station_name=s.get("fclty_nm", "이름없음"),
-                    address=s.get("rn_adres"),
-                    phone_number=s.get("telno"),
-                )
-            )
+            db.add(Station(
+                station_code=s["objt_id"],
+                station_name=fclty_nm or "이름없음",
+                fclty_ty=fclty_ty,
+                unit_type=unit_type,
+                address=s.get("rn_adres"),
+                phone_number=s.get("telno"),
+            ))
             created += 1
 
     db.commit()
@@ -126,3 +132,22 @@ def sync_all_stations(db: Session, num_of_rows: int = 500) -> dict:
         "updated": total_updated,
         "total_pages": total_pages,
     }
+
+def classify_unit_type(fclty_ty: str, fclty_nm: str) -> str:
+    """fclty_ty + fclty_nm 기반으로 UnitType 값을 결정"""
+    if fclty_ty == "소방서":
+        return "본서"
+    
+    if fclty_ty == "119안전센터":
+        return "안전센터"
+    
+    if "지역대" in fclty_nm:
+        return "지역대"
+    if "항공대" in fclty_nm:
+        return "항공대"
+    if "구급대" in fclty_nm:
+        return "구급대"
+    if "특수대응단" in fclty_nm:
+        return "특수대응단"
+    
+    return "기타"

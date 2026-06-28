@@ -11,6 +11,7 @@ class UnitType(PyEnum):
     AMBULANCE = "구급대"
     AVIATION = "항공대"
     SPECIAL_RESPONSE = "특수대응단"
+    LOCAL_UNIT = "지역대"
     OTHER = "기타"
 
 class User(Base):
@@ -30,7 +31,7 @@ class User(Base):
         default=UnitType.HEADQUARTERS,
         nullable=False,
     )
-    safety_center_id = Column(Integer, ForeignKey("safety_centers.id"), nullable=True)
+    safety_center_id = Column(Integer, nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     must_change_password = Column(Boolean, default=True, nullable=False)
 

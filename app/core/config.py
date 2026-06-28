@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     STATION_API_KEY: str
     STATION_API_BASE_URL: str
 
+    VWORLD_API_KEY: str
+
     @property
     def DATABASE_URL(self) -> str:
         return (

@@ -64,9 +64,9 @@ export async function createUser(data) {
     return response.data;
 }
 
-export async function getSafetyCenters() {
-    const response = await client.get("/stations/safety-centers");
-    return response.data;
+export async function getUnits(unitType) {
+    const response = await client.get(`/stations/units?unit_type=${unitType}`);
+  return response.data;
 }
 
 export async function resetUserPassword(firefighterNumber) {

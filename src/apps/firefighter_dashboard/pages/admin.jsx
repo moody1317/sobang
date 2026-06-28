@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '../contexts/usercontext';
 import DashboardLayout from '../layouts/dashboardlayout';
 import client from '../../../api/client';
-import { getStationUsers, createUser, getSafetyCenters, resetUserPassword } from '../../../api/auth';
+import { getStationUsers, createUser, getUnits, resetUserPassword } from '../../../api/auth';
 import './admin.css';
 
 const RANKS = ['소방사', '소방교', '소방장', '소방위'];
@@ -13,7 +13,7 @@ const UNIT_TYPES = [
   { value: '구급대', label: '구급대' },
   { value: '항공대', label: '항공대' },
   { value: '특수대응단', label: '특수대응단' },
-  { value: '기타', label: '기타' },
+  { value: '지역대', label: '지역대' },
 ];
 
 
@@ -43,10 +43,11 @@ function AddModal({ onClose, onCreated }) {
 
   async function handleUnitTypeChange(type) {
     setForm((prev) => ({ ...prev, unit_type: type, safety_center_id: null }));
-    if (type === '안전센터') {
+    if (type === '안전센터' || type === '지역대') {
       setCentersLoading(true);
+      setSafetyCenters([]);
       try {
-        const data = await getSafetyCenters();
+        const data = await getUnits(type);
         setSafetyCenters(data);
       } catch {
         setSafetyCenters([]);
@@ -68,8 +69,8 @@ function AddModal({ onClose, onCreated }) {
     const e = {};
     if (!form.name.trim()) e.name = '이름을 입력하세요.';
     if (!form.email.trim()) e.email = '이메일을 입력하세요.';
-    if (form.unit_type === '안전센터' && !form.safety_center_id) {
-        e.safety_center_id = '안전센터를 선택하세요.';
+    if (['안전센터', '지역대'].includes(form.unit_type) && !form.safety_center_id) {
+      e.safety_center_id = `${form.unit_type}를 선택하세요.`;
     }
     return e;
   }
@@ -228,13 +229,13 @@ function AddModal({ onClose, onCreated }) {
             </div>
           </div>
 
-          {form.unit_type === '안전센터' && (
+          {(form.unit_type === '안전센터' || form.unit_type === '지역대') && (
             <div className="admin-field">
-              <label className="admin-field-label">안전센터 선택 <span className="admin-required">*</span></label>
+              <label className="admin-field-label">{form.unit_type} 선택 <span className="admin-required">*</span></label>
               {centersLoading ? (
                 <span className="admin-field-hint">불러오는 중…</span>
               ) : safetyCenters.length === 0 ? (
-                <span className="admin-field-hint">등록된 안전센터가 없습니다.</span>
+                <span className="admin-field-hint">등록된 {form.unit_type}가 없습니다.</span>
               ) : (
                 <div className="admin-chips">
                   {safetyCenters.map((c) => (
@@ -244,7 +245,7 @@ function AddModal({ onClose, onCreated }) {
                       className={`admin-chip${form.safety_center_id === c.id ? ' active' : ''}`}
                       onClick={() => setForm((prev) => ({ ...prev, safety_center_id: c.id }))}
                     >
-                      {c.center_name}
+                      {c.name}
                     </button>
                   ))}
                 </div>
@@ -282,10 +283,11 @@ function EditModal({ member, onClose, onSaved }) {
   async function handleUnitTypeChange(type) {
     setSelectedUnitType(type);
     setSelectedCenterId(null);
-    if (type === '안전센터' && safetyCenters.length === 0) {
+    if (type === '안전센터' || type === '지역대') {
       setCentersLoading(true);
+      setSafetyCenters([]);
       try {
-        const data = await getSafetyCenters();
+        const data = await getUnits(type);
         setSafetyCenters(data);
       } catch {
         setSafetyCenters([]);
@@ -296,9 +298,9 @@ function EditModal({ member, onClose, onSaved }) {
   }
 
   useEffect(() => {
-    if (member.unit_type === '안전센터') {
+    if (member.unit_type === '안전센터' || member.unit_type === '지역대') {
       setCentersLoading(true);
-      getSafetyCenters()
+      getUnits(member.unit_type)
         .then(setSafetyCenters)
         .catch(() => setSafetyCenters([]))
         .finally(() => setCentersLoading(false));
@@ -321,7 +323,7 @@ function EditModal({ member, onClose, onSaved }) {
   async function handleSave() {
     setLoadingSave(true);
     try {
-      const payload = { unit_type: selectedUnitType, safety_center_id: selectedUnitType === '안전센터' ? selectedCenterId : null };
+      const payload = { unit_type: selectedUnitType, safety_center_id: ['안전센터', '지역대'].includes(selectedUnitType) ? selectedCenterId : null };
       if (transferStationId.trim()) payload.station_id = Number(transferStationId);
       await client.patch(`/admin/users/${member.id}`, payload);
       onSaved();
@@ -390,11 +392,11 @@ function EditModal({ member, onClose, onSaved }) {
                 </button>
               ))}
             </div>
-            {selectedUnitType === '안전센터' && (
+            {(selectedUnitType === '안전센터' || selectedUnitType === '지역대') && (
               centersLoading ? (
                 <span className="admin-field-hint">불러오는 중…</span>
               ) : safetyCenters.length === 0 ? (
-                <span className="admin-field-hint">등록된 안전센터가 없습니다.</span>
+                <span className="admin-field-hint">등록된 {selectedUnitType}가 없습니다.</span>
               ) : (
                 <div className="admin-chips">
                   {safetyCenters.map((c) => (
@@ -404,7 +406,7 @@ function EditModal({ member, onClose, onSaved }) {
                       className={`admin-chip${selectedCenterId === c.id ? ' active' : ''}`}
                       onClick={() => setSelectedCenterId(c.id)}
                     >
-                      {c.center_name}
+                      {c.name}
                     </button>
                   ))}
                 </div>

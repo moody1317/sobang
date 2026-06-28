@@ -8,6 +8,7 @@ import MyPagePage from './apps/firefighter_dashboard/pages/mypage';
 import AdminPage from './apps/firefighter_dashboard/pages/admin';
 import ChangePassword from './apps/firefighter_dashboard/pages/changepw';
 import DataPagePage from './apps/firefighter_dashboard/pages/data';
+import DangerPage from './apps/firefighter_dashboard/pages/danger';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './shared/style/global.css';
 
@@ -55,6 +56,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <DataPagePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/dashboard/map'
+            element={
+              <ProtectedRoute>
+                <DangerPage />
               </ProtectedRoute>
             }
           />

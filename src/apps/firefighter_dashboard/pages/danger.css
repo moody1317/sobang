@@ -1,0 +1,456 @@
+.danger {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.danger-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border-card);
+  border-radius: var(--radius-card);
+  padding: 14px 20px;
+  box-shadow: var(--shadow-card);
+  flex-wrap: wrap;
+}
+
+.danger-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.danger-filter-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.danger-chips {
+  display: flex;
+  gap: 6px;
+}
+
+.danger-chip {
+  padding: 5px 14px;
+  border-radius: 99px;
+  border: 1px solid var(--color-border-inner);
+  background: var(--color-bg-surface);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.danger-chip:hover {
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+}
+
+.danger-chip.active {
+  background: var(--color-brand);
+  border-color: var(--color-brand);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ── Content grid ────────────────────────────────────────── */
+.danger-content {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 16px;
+  align-items: start;
+}
+
+/* ── Map card ────────────────────────────────────────────── */
+.danger-map-card {
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border-card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.danger-map-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--color-border-inner);
+  gap: 16px;
+}
+
+.danger-map-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 4px;
+}
+
+.danger-map-sub {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.danger-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.danger-legend-label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.danger-legend-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+}
+
+.danger-legend-dot--safe    { background: var(--color-risk-safe); }
+.danger-legend-dot--warning { background: var(--color-risk-warning); }
+.danger-legend-dot--caution { background: var(--color-risk-caution); }
+.danger-legend-dot--danger  { background: var(--color-risk-danger); }
+
+.danger-map-body {
+  flex: 1;
+  min-height: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.danger-map-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-label);
+}
+
+.danger-map-placeholder i {
+  font-size: 48px;
+  color: var(--color-border-inner);
+}
+
+.danger-map-placeholder span {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.danger-map-placeholder-sub {
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  color: var(--color-text-label) !important;
+}
+
+/* ── Detail panel ────────────────────────────────────────── */
+.danger-panel {
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border-card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.danger-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.danger-panel-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.danger-panel-name {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+.danger-panel-type {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.danger-level-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 99px;
+}
+
+.danger-level-badge--danger  { background: #fff1f1; color: var(--color-risk-danger); }
+.danger-level-badge--caution { background: #fff8ed; color: var(--color-risk-caution); }
+.danger-level-badge--warning { background: #fffbe6; color: var(--color-risk-warning-text, #92600a); }
+.danger-level-badge--safe    { background: #f0fdf4; color: var(--color-risk-safe); }
+
+/* ── Score row ───────────────────────────────────────────── */
+.danger-score-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.danger-score {
+  font-size: 56px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.danger-score--danger  { color: var(--color-risk-danger); }
+.danger-score--caution { color: var(--color-risk-caution); }
+.danger-score--warning { color: var(--color-risk-warning-text, #92600a); }
+.danger-score--safe    { color: var(--color-risk-safe); }
+
+.danger-rank {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.danger-rank-label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.danger-rank-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+/* ── Divider ─────────────────────────────────────────────── */
+.danger-divider {
+  height: 1px;
+  background: var(--color-border-divider);
+  margin: 14px 0;
+}
+
+/* ── Section ─────────────────────────────────────────────── */
+.danger-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.danger-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Basis ───────────────────────────────────────────────── */
+.danger-basis {
+  display: flex;
+  gap: 0;
+}
+
+.danger-basis-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-md);
+  margin-right: 8px;
+}
+
+.danger-basis-item:last-child {
+  margin-right: 0;
+}
+
+.danger-basis-label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.danger-basis-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+/* ── Composition donut ───────────────────────────────────── */
+.danger-composition {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.danger-donut-wrap {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  flex-shrink: 0;
+}
+
+.danger-donut-wrap svg {
+  display: block;
+}
+
+.danger-donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.danger-donut-total {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+.danger-donut-unit {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.danger-type-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.danger-type-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.danger-type-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.danger-type-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.danger-type-label {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.danger-type-count {
+  font-size: 12px;
+  color: var(--color-text-primary);
+  font-weight: 600;
+  text-align: right;
+}
+
+.danger-type-pct {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  width: 32px;
+  text-align: right;
+}
+
+/* ── Time chart ──────────────────────────────────────────── */
+.danger-time-chart {
+  display: flex;
+  gap: 8px;
+  height: 120px;
+  align-items: flex-end;
+}
+
+.danger-time-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+}
+
+.danger-time-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.danger-time-bar-track {
+  flex: 1;
+  width: 100%;
+  background: var(--color-bg-surface);
+  border-radius: 4px 4px 0 0;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.danger-time-bar {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.3s ease;
+}
+
+.danger-time-bar--danger  { background: var(--color-risk-danger); }
+.danger-time-bar--caution { background: var(--color-risk-caution); }
+.danger-time-bar--warning { background: var(--color-risk-warning-text, #92600a); }
+.danger-time-bar--safe    { background: var(--color-risk-safe); }
+
+.danger-time-label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+/* ── Register button ─────────────────────────────────────── */
+.danger-register-btn {
+  width: 100%;
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--color-brand);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s;
+}
+
+.danger-register-btn:hover {
+  background: var(--color-brand-mid);
+}

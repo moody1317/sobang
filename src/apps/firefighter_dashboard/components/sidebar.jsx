@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { logout } from '../../../api/auth';
 import { useUser } from '../contexts/usercontext';
+import { useAlertCount } from '../contexts/alertcontext';
 import './sidebar.css';
 
 const NAV_SECTIONS = [
@@ -18,7 +19,7 @@ const NAV_SECTIONS = [
     items: [
       { to: '/dashboard/inspection', icon: 'bi-journal-text', label: '점검 일지' },
       { to: '/dashboard/schedule', icon: 'bi-calendar3', label: '근무 일정' },
-      { to: '/dashboard/alerts', icon: 'bi-bell', label: '알림 센터', badge: 3 },
+      { to: '/dashboard/alerts', icon: 'bi-bell', label: '알림 센터' },
     ],
   },
   {
@@ -34,6 +35,7 @@ function Sidebar() {
   const user = useUser();
   const navigate = useNavigate();
   const isAdmin = user?.rank === '관리자';
+  const unreadCount = useAlertCount();
 
   function handleLogout() {
     logout();
@@ -74,8 +76,8 @@ function Sidebar() {
               >
                 <i className={`bi ${item.icon}`} />
                 <span>{item.label}</span>
-                {item.badge != null && (
-                  <span className="sidebar-badge">{item.badge}</span>
+                {item.to === '/dashboard/alerts' && unreadCount > 0 && (
+                  <span className="sidebar-badge">{unreadCount}</span>
                 )}
               </NavLink>
             ))}

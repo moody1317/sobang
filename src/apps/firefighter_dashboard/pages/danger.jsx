@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import DashboardLayout from '../layouts/dashboardlayout';
+import InspectionAddModal from './inspectionAdd';
 import './danger.css';
 
 const ACCIDENT_TYPES = ['전체', '화재', '구급', '구조'];
@@ -66,6 +67,7 @@ function DonutChart({ types, total }) {
 }
 
 function RegionPanel({ region }) {
+  const [showModal, setShowModal] = useState(false);
   const maxCount = Math.max(...region.timeSlots.map((s) => s.count));
   const levelCls = LEVEL_CLASS[region.level] ?? 'safe';
 
@@ -148,9 +150,11 @@ function RegionPanel({ region }) {
         </div>
       </div>
 
-      <button className="danger-register-btn">
+      <button className="danger-register-btn" onClick={() => setShowModal(true)}>
         <i className="bi bi-plus-lg" /> 이 구역 점검 등록
       </button>
+
+      {showModal && <InspectionAddModal regionName={region.name} onClose={() => setShowModal(false)} />}
     </div>
   );
 }

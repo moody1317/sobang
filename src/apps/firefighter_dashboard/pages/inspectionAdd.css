@@ -1,0 +1,260 @@
+.ia-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--shadow-modal-bg);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.ia-modal {
+  background: var(--color-bg-white);
+  border-radius: var(--radius-modal);
+  width: 560px;
+  max-width: 100%;
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(20, 25, 35, 0.25);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ── */
+.ia-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 24px 24px 20px;
+  border-bottom: 1px solid var(--color-border-inner);
+}
+
+.ia-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ia-icon {
+  width: 44px;
+  height: 44px;
+  background: var(--color-brand-alert);
+  border-radius: var(--radius-icon);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--color-brand);
+  flex-shrink: 0;
+}
+
+.ia-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.ia-subtitle {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.ia-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: background var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.ia-close:hover {
+  background: var(--color-border-inner);
+}
+
+/* ── Body ── */
+.ia-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ia-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ia-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.ia-required {
+  color: var(--color-brand);
+}
+
+.ia-label-opt {
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.ia-input-wrap {
+  position: relative;
+}
+
+.ia-input-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.ia-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-input);
+  font-size: 14px;
+  color: var(--color-text-primary);
+  background: var(--color-bg-white);
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  box-sizing: border-box;
+}
+
+.ia-input--icon {
+  padding-left: 36px;
+}
+
+.ia-input--readonly {
+  background: var(--color-bg-surface);
+  color: var(--color-text-muted);
+  cursor: default;
+}
+
+.ia-input:focus {
+  border-color: var(--color-brand);
+  box-shadow: var(--shadow-focus);
+}
+
+.ia-input::placeholder {
+  color: var(--color-text-placeholder);
+}
+
+.ia-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ia-chip {
+  padding: 6px 14px;
+  border-radius: 99px;
+  border: 1px solid var(--color-border-inner);
+  background: var(--color-bg-surface);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.ia-chip:hover {
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+}
+
+.ia-chip.active {
+  background: var(--color-brand);
+  border-color: var(--color-brand);
+  color: #fff;
+  font-weight: 600;
+}
+
+.ia-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.ia-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-input);
+  font-size: 14px;
+  color: var(--color-text-primary);
+  background: var(--color-bg-white);
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  box-sizing: border-box;
+}
+
+.ia-textarea:focus {
+  border-color: var(--color-brand);
+  box-shadow: var(--shadow-focus);
+}
+
+.ia-textarea::placeholder {
+  color: var(--color-text-placeholder);
+}
+
+/* ── Footer ── */
+.ia-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 16px 24px 24px;
+  border-top: 1px solid var(--color-border-inner);
+}
+
+.ia-btn-cancel {
+  padding: 12px;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-btn);
+  background: var(--color-bg-white);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.ia-btn-cancel:hover {
+  background: var(--color-bg-surface);
+}
+
+.ia-btn-confirm {
+  padding: 12px;
+  border: none;
+  border-radius: var(--radius-btn);
+  background: var(--color-brand);
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.ia-btn-confirm:hover {
+  background: var(--color-brand-dark);
+}

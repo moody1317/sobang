@@ -1,9 +1,3 @@
-.briefing {
-  max-width: 1200px;
-}
-
-
-/* Greeting row */
 .briefing-greeting-row {
   display: flex;
   align-items: flex-start;

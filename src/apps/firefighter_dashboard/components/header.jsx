@@ -1,5 +1,6 @@
 import { useLocation, NavLink } from 'react-router-dom';
 import { useUser } from '../contexts/usercontext';
+import { useAlertCount } from '../contexts/alertcontext';
 import './header.css';
 
 const PAGE_LABELS = {
@@ -31,6 +32,7 @@ const PAGE_SUB = {
 function Header() {
   const user = useUser();
   const { pathname } = useLocation();
+  const unreadCount = useAlertCount();
   const initial = user?.name?.[0] ?? '';
   const pageLabel = PAGE_LABELS[pathname] ?? '';
   const pageSub = PAGE_SUB[pathname] ?? '';
@@ -52,9 +54,10 @@ function Header() {
           />
         </div>
 
-        <button className="header-icon-btn" aria-label="알림">
+        <NavLink to="/dashboard/alerts" className="header-icon-btn header-bell-wrap" aria-label="알림">
           <i className="bi bi-bell" />
-        </button>
+          {unreadCount > 0 && <span className="header-bell-dot" />}
+        </NavLink>
 
         <NavLink to="/dashboard/profile" className="header-user">
           <div className="header-avatar">{initial}</div>

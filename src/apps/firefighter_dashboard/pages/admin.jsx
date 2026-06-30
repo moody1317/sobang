@@ -7,14 +7,7 @@ import './admin.css';
 
 const RANKS = ['소방사', '소방교', '소방장', '소방위'];
 
-const UNIT_TYPES = [
-  { value: '본서', label: '본서' },
-  { value: '안전센터', label: '안전센터' },
-  { value: '구급대', label: '구급대' },
-  { value: '항공대', label: '항공대' },
-  { value: '특수대응단', label: '특수대응단' },
-  { value: '지역대', label: '지역대' },
-];
+const UNIT_TYPES = ['본서', '안전센터', '구급대', '항공대', '특수대응단', '지역대'];
 
 
 function AddModal({ onClose, onCreated }) {
@@ -218,12 +211,12 @@ function AddModal({ onClose, onCreated }) {
             <div className="admin-chips">
               {UNIT_TYPES.map((u) => (
                 <button
-                  key={u.value}
+                  key={u}
                   type="button"
-                  className={`admin-chip${form.unit_type === u.value ? ' active' : ''}`}
-                  onClick={() => handleUnitTypeChange(u.value)}
+                  className={`admin-chip${form.unit_type === u ? ' active' : ''}`}
+                  onClick={() => handleUnitTypeChange(u)}
                 >
-                  {u.label}
+                  {u}
                 </button>
               ))}
             </div>
@@ -383,12 +376,12 @@ function EditModal({ member, onClose, onSaved }) {
             <div className="admin-chips">
               {UNIT_TYPES.map((u) => (
                 <button
-                  key={u.value}
+                  key={u}
                   type="button"
-                  className={`admin-chip${selectedUnitType === u.value ? ' active' : ''}`}
-                  onClick={() => handleUnitTypeChange(u.value)}
+                  className={`admin-chip${selectedUnitType === u ? ' active' : ''}`}
+                  onClick={() => handleUnitTypeChange(u)}
                 >
-                  {u.label}
+                  {u}
                 </button>
               ))}
             </div>

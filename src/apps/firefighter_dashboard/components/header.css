@@ -86,6 +86,23 @@
   background: var(--color-bg-surface-2);
 }
 
+.header-bell-wrap {
+  position: relative;
+  text-decoration: none;
+  color: var(--color-text-tertiary);
+}
+
+.header-bell-dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 8px;
+  height: 8px;
+  background: var(--color-risk-danger);
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
 .header-user {
   display: flex;
   align-items: center;

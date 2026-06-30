@@ -1,8 +1,3 @@
-/* ── Page layout ── */
-.admin {
-  max-width: 960px;
-}
-
 .admin-page-header {
   display: flex;
   align-items: flex-start;
@@ -44,7 +39,6 @@
   background: var(--color-brand-dark);
 }
 
-/* ── Table card ── */
 .admin-card {
   background: var(--color-bg-white);
   border: 1px solid var(--color-border-card);
@@ -67,12 +61,12 @@
   font-size: 12px;
   font-weight: 600;
   color: var(--color-text-label);
-  text-align: left;
+  text-align: center;
   border-bottom: 1px solid var(--color-border-inner);
 }
 
 .admin-table th:last-child {
-  text-align: right;
+  text-align: center;
 }
 
 .admin-table tbody tr {
@@ -91,9 +85,9 @@
 .admin-table td {
   padding: 16px 20px;
   vertical-align: middle;
+  text-align: center;
 }
 
-/* ── Member cell ── */
 .admin-member {
   display: flex;
   align-items: center;
@@ -113,6 +107,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  margin-left: 10px;
 }
 
 .admin-member-info {

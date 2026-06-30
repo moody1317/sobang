@@ -1,0 +1,128 @@
+.alert-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.alert-unread-summary {
+  font-size: 15px;
+  color: var(--color-text-secondary);
+}
+
+.alert-unread-count {
+  color: var(--color-brand);
+  font-weight: 700;
+}
+
+.alert-mark-all-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--color-text-label);
+  padding: 0;
+  transition: color var(--transition-fast);
+}
+
+.alert-mark-all-btn:hover {
+  color: var(--color-brand);
+}
+
+.alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.alert-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 20px;
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border-card);
+  border-radius: var(--radius-card);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.alert-item:hover {
+  border-color: var(--color-border-medium);
+}
+
+.alert-item--unread {
+  background: var(--color-brand-bg-alt);
+  border-color: var(--color-brand-border);
+}
+
+.alert-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-icon);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+
+.alert-icon-wrap--위험 { background: var(--color-risk-danger-bg); }
+.alert-icon-wrap--위험 i { color: var(--color-risk-danger); }
+.alert-badge--위험 { background: var(--color-risk-danger-bg); color: var(--color-risk-danger-text); }
+
+.alert-icon-wrap--특보 { background: var(--color-brand-alert); }
+.alert-icon-wrap--특보 i { color: var(--color-brand); }
+.alert-badge--특보 { background: var(--color-brand-alert); color: var(--color-brand-dark); }
+
+.alert-icon-wrap--경계 { background: var(--color-risk-caution-bg); }
+.alert-icon-wrap--경계 i { color: var(--color-risk-caution); }
+.alert-badge--경계 { background: var(--color-risk-caution-bg); color: var(--color-risk-caution-text); }
+
+.alert-icon-wrap--주의 { background: var(--color-risk-warning-bg); }
+.alert-icon-wrap--주의 i { color: var(--color-risk-warning); }
+.alert-badge--주의 { background: var(--color-risk-warning-bg); color: var(--color-risk-warning-text); }
+
+.alert-icon-wrap--안전 { background: var(--color-risk-safe-bg); }
+.alert-icon-wrap--안전 i { color: var(--color-risk-safe); }
+.alert-badge--안전 { background: var(--color-risk-safe-bg); color: var(--color-risk-safe-text); }
+
+.alert-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.alert-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.alert-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-tag);
+  flex-shrink: 0;
+}
+
+.alert-location {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.alert-time {
+  font-size: 13px;
+  color: var(--color-text-label);
+  margin-left: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.alert-message {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  line-height: 1.55;
+}

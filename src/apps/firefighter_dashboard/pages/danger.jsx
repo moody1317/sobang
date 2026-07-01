@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import DashboardLayout from '../layouts/dashboardlayout';
 import InspectionAddModal from './inspectionAdd';
 import './danger.css';
@@ -162,7 +163,8 @@ function RegionPanel({ region }) {
 function DangerMap() {
   const [accidentType, setAccidentType] = useState('전체');
   const [period, setPeriod] = useState('최근 1년');
-  const selectedRegion = MOCK_REGION;
+  const { state } = useLocation();
+  const selectedRegion = state?.region ?? MOCK_REGION;
 
   return (
     <div className="danger">

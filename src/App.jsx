@@ -11,6 +11,10 @@ import ChangePassword from './apps/firefighter_dashboard/pages/changepw';
 import DataPagePage from './apps/firefighter_dashboard/pages/data';
 import DangerPage from './apps/firefighter_dashboard/pages/danger';
 import Alert from './apps/firefighter_dashboard/pages/alert';
+import PriorityPage from './apps/firefighter_dashboard/pages/priority';
+import Stats from './apps/firefighter_dashboard/pages/stats';
+import InspectionPage from './apps/firefighter_dashboard/pages/inspection';
+import SchedulePage from './apps/firefighter_dashboard/pages/schedule';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './shared/style/global.css';
 
@@ -63,6 +67,14 @@ function App() {
             }
           />
           <Route
+            path='/dashboard/priority'
+            element={
+              <ProtectedRoute>
+                <PriorityPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path='/dashboard/map'
             element={
               <ProtectedRoute>
@@ -75,6 +87,30 @@ function App() {
             element={
               <ProtectedRoute>
                 <Alert/>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/dashboard/stats'
+            element={
+              <ProtectedRoute>
+                <Stats />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/dashboard/inspection'
+            element={
+              <ProtectedRoute>
+                <InspectionPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/dashboard/schedule'
+            element={
+              <ProtectedRoute>
+                <SchedulePage />
               </ProtectedRoute>
             }
           />

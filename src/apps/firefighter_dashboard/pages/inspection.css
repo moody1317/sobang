@@ -1,0 +1,177 @@
+.insp {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.insp-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.insp-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.insp-filter-btn {
+  padding: 7px 16px;
+  border-radius: var(--radius-btn);
+  border: 1px solid var(--color-border-input);
+  background: var(--color-bg-white);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.insp-filter-btn:hover {
+  background: var(--color-bg-surface-2);
+}
+
+.insp-filter-btn.active {
+  background: var(--color-brand);
+  border-color: var(--color-brand);
+  color: #fff;
+  font-weight: 700;
+}
+
+.insp-filter-btn--danger.active  { background: var(--color-risk-danger-bg);  border-color: var(--color-risk-danger);  color: var(--color-risk-danger-text); }
+.insp-filter-btn--caution.active { background: var(--color-risk-caution-bg); border-color: var(--color-risk-caution); color: var(--color-risk-caution-text); }
+.insp-filter-btn--brand.active   { background: var(--color-brand-bg-alt);    border-color: var(--color-brand-border); color: var(--color-brand); }
+.insp-filter-btn--warning.active { background: var(--color-risk-warning-bg); border-color: var(--color-risk-warning); color: var(--color-risk-warning-text); }
+.insp-filter-btn--safe.active    { background: var(--color-risk-safe-bg);    border-color: var(--color-risk-safe);    color: var(--color-risk-safe-text); }
+
+.insp-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 20px;
+  background: var(--color-brand);
+  border: none;
+  border-radius: var(--radius-btn);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.insp-add-btn:hover {
+  background: var(--color-brand-dark);
+}
+
+.insp-card {
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border-card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.insp-head,
+.insp-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 1.6fr 1fr 1fr 100px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 24px;
+}
+
+.insp-head {
+  height: 44px;
+  background: var(--color-bg-surface);
+  border-bottom: 1px solid var(--color-border-inner);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-label);
+  letter-spacing: 0.03em;
+}
+
+.insp-row {
+  min-height: 64px;
+  border-bottom: 1px solid var(--color-border-row);
+  transition: background var(--transition-fast);
+}
+
+.insp-row:last-child {
+  border-bottom: none;
+}
+
+.insp-row:hover {
+  background: var(--color-bg-surface-2);
+}
+
+.insp-col--right {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.insp-date {
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+  font-weight: 600;
+}
+
+.insp-region {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.insp-target {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.insp-officer {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.insp-type-badge {
+  display: inline-flex;
+  align-items: center;
+  text-align: center;
+  width: fit-content;
+  padding: 3px 10px;
+  border-radius: var(--radius-tag);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.insp-type-badge--danger  { background: var(--color-risk-danger-bg);  color: var(--color-risk-danger-text); }
+.insp-type-badge--caution { background: var(--color-risk-caution-bg); color: var(--color-risk-caution-text); }
+.insp-type-badge--brand   { background: var(--color-brand-bg-alt);    color: var(--color-brand); }
+.insp-type-badge--warning { background: var(--color-risk-warning-bg); color: var(--color-risk-warning-text); }
+.insp-type-badge--safe    { background: var(--color-risk-safe-bg);    color: var(--color-risk-safe-text); }
+
+.insp-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 12px;
+  border-radius: var(--radius-tag);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.insp-status-badge--warning { background: var(--color-risk-warning-bg); color: var(--color-risk-warning-text); }
+.insp-status-badge--blue    { background: var(--color-blue-bg);          color: var(--color-blue-dark); }
+.insp-status-badge--safe    { background: var(--color-risk-safe-bg);     color: var(--color-risk-safe-text); }
+
+.insp-empty {
+  padding: 48px 24px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}

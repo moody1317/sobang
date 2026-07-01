@@ -20,6 +20,9 @@ class Settings(BaseSettings):
 
     VWORLD_API_KEY: str
 
+    POPULATION_API_KEY: str         
+    POPULATION_API_BASE_URL: str = "http://apis.data.go.kr/1741000/stdgSexdAgePpltn/selectStdgSexdAgePpltn" 
+
     @property
     def DATABASE_URL(self) -> str:
         return (

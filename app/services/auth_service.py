@@ -6,6 +6,18 @@ from app.schemas.user import UserCreate, ProfileUpdateRequest
 
 from app.models.station import Station
 from app.models.safety_center import SafetyCenter
+from app.models.ambulance_unit import AmbulanceUnit
+from app.models.aviation_unit import AviationUnit
+from app.models.special_response_unit import SpecialResponseUnit
+from app.models.local_unit import LocalUnit
+
+UNIT_TABLE_MAP = {
+    UnitType.SAFETY_CENTER: SafetyCenter,
+    UnitType.AMBULANCE: AmbulanceUnit,
+    UnitType.AVIATION: AviationUnit,
+    UnitType.SPECIAL_RESPONSE: SpecialResponseUnit,
+    UnitType.LOCAL_UNIT: LocalUnit,
+}
 
 def generate_firefighter_number(db: Session, station_id: int) -> str:
     station = db.query(Station).filter(Station.id == station_id).first()
@@ -72,16 +84,16 @@ def create_user(db: Session, user_data: UserCreate) -> tuple[User, str]:
         raise ValueError("이미 사용 중인 이메일입니다.")
 
     safety_center_id = None
-    if user_data.unit_type == UnitType.SAFETY_CENTER:
-        if user_data.safety_center_id is not None:
-            center = db.query(SafetyCenter).filter(
-                SafetyCenter.id == user_data.safety_center_id,
-                SafetyCenter.station_id == user_data.station_id,
-            ).first()
-            if not center:
-                raise ValueError("선택한 안전센터가 해당 소방서 소속이 아닙니다.")
-            safety_center_id = user_data.safety_center_id
-                
+    model = UNIT_TABLE_MAP.get(user_data.unit_type)
+
+    if model is not None:
+        if user_data.safety_center_id is None:
+            raise ValueError(f"{user_data.unit_type.value} 소속은 세부 시설을 선택해야 합니다.")
+        unit = db.query(model).filter(model.id == user_data.safety_center_id).first()
+        if not unit:
+            raise ValueError("선택한 시설 정보가 올바르지 않습니다.")
+        safety_center_id = user_data.safety_center_id
+
     firefighter_number = generate_firefighter_number(db, user_data.station_id)
     temp_password = generate_temp_password()
 
@@ -89,7 +101,7 @@ def create_user(db: Session, user_data: UserCreate) -> tuple[User, str]:
         firefighter_number=firefighter_number,
         name=user_data.name,
         email=user_data.email,
-        password_hash=hash_password(temp_password),   
+        password_hash=hash_password(temp_password),
         role=user_data.role,
         rank=user_data.rank,
         phone_number=user_data.phone_number,

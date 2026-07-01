@@ -45,6 +45,10 @@ PROVINCE_BBOXES = {
     "제주": "125.9,32.9,127.1,33.7",
 }
 
+SUFFIX_TOKENS = [
+    "지역119센터", "소방정안전센터", "지역센터",
+    "119", "안전센터", "센터",
+]
 
 def fetch_jurisdiction_geojson(bbox: str) -> dict:
     params = {
@@ -106,20 +110,60 @@ def parse_jurisdiction_features(features: list[dict]) -> list[dict]:
     return parsed
 
 def normalize_name(name: str) -> str:
-    """비교를 위해 '119', 공백을 제거한 핵심 이름만 추출"""
-    return re.sub(r"119|\s", "", name)
+    result = name
+    for token in SUFFIX_TOKENS:
+        result = result.replace(token, "")
+    return re.sub(r"\s", "", result)
+
+def rematch_unmatched_jurisdictions(db: Session) -> dict:
+    unmatched = (
+        db.query(Jurisdiction)
+        .filter(Jurisdiction.station_id.is_(None), Jurisdiction.safety_center_id.is_(None))
+        .all()
+    )
+
+    all_centers = db.query(SafetyCenter).all()
+    all_stations = db.query(Station).all()
+
+    def match_ward(ward_name: str):
+        normalized_ward = normalize_name(ward_name)
+
+        for center in all_centers:
+            normalized_center = normalize_name(center.station_name)
+            if normalized_ward in normalized_center or normalized_center in normalized_ward:
+                return None, center.id
+
+        for station in all_stations:
+            normalized_station = normalize_name(station.station_name)
+            if normalized_ward in normalized_station or normalized_station in normalized_ward:
+                return station.id, None
+
+        return None, None
+
+    matched = 0
+    still_unmatched = []
+
+    for j in unmatched:
+        station_id, safety_center_id = match_ward(j.ward_name)
+        if station_id or safety_center_id:
+            j.station_id = station_id
+            j.safety_center_id = safety_center_id
+            matched += 1
+        else:
+            still_unmatched.append(j.ward_name)
+
+    db.commit()
+    return {"matched": matched, "still_unmatched": still_unmatched}
 
 def match_ward_to_db(db: Session, ward_name: str):
     normalized_ward = normalize_name(ward_name)
 
-    # 1순위: 안전센터 — 양방향 부분 매칭
     centers = db.query(SafetyCenter).all()
     for center in centers:
-        normalized_center = normalize_name(center.center_name)
+        normalized_center = normalize_name(center.station_name)   # center_name → station_name
         if normalized_ward in normalized_center or normalized_center in normalized_ward:
             return None, center.id
 
-    # 2순위: 소방서 본서 — 양방향 부분 매칭
     stations = db.query(Station).all()
     for station in stations:
         normalized_station = normalize_name(station.station_name)
@@ -139,7 +183,7 @@ def save_jurisdictions(db: Session, jurisdiction_data: list[dict]) -> dict:
         normalized_ward = normalize_name(ward_name)
 
         for center in all_centers:
-            normalized_center = normalize_name(center.center_name)
+            normalized_center = normalize_name(center.station_name)   # center_name → station_name
             if normalized_ward in normalized_center or normalized_center in normalized_ward:
                 return None, center.id
 

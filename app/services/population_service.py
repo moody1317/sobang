@@ -151,7 +151,7 @@ def fetch_total_count(stdg_cd: str, srch_fr_ym: str, srch_to_ym: str, lv: str = 
         "numOfRows": 1,
         "type": "xml",
     }
-    response = requests.get(settings.POPULATION_API_BASE_URL, params=params, timeout=10)
+    response = requests.get(settings.POPULATION_API_BASE_URL, params=params, timeout=30)
     response.raise_for_status()
     root = ET.fromstring(response.text)
     total = root.findtext(".//totalCount")

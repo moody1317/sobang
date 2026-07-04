@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     EMS_API_KEY: str
     EMS_API_BASE_URL: str = "https://www.bigdata-119.kr/fsdpApi/rest/v1/ems-incidents"
 
+    FOREST_FIRE_API_KEY: str
+    FOREST_FIRE_API_BASE_URL: str = "https://apis.data.go.kr/1400377/forestPointV2/forestPointListSigunguSearchV2"     
+
     @property
     def DATABASE_URL(self) -> str:
         return (

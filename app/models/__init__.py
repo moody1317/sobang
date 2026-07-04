@@ -9,3 +9,5 @@ import app.models.jurisdiction
 import app.models.incident
 import app.models.notification
 import app.models.population_stat 
+import app.models.fire_incident
+import app.models.fire_target

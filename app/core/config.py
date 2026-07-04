@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     POPULATION_API_KEY: str         
     POPULATION_API_BASE_URL: str = "http://apis.data.go.kr/1741000/stdgSexdAgePpltn/selectStdgSexdAgePpltn" 
 
+    EMS_API_KEY: str
+    EMS_API_BASE_URL: str = "https://www.bigdata-119.kr/fsdpApi/rest/v1/ems-incidents"
+
     @property
     def DATABASE_URL(self) -> str:
         return (

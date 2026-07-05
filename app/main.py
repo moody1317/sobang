@@ -14,6 +14,8 @@ import app.api.v1.incident as incidents
 import app.models.incident
 import app.models.notification
 
+from app.api.v1 import notifications
+
 app = FastAPI(
     title="Sobang Backend",
     version="0.1.0",
@@ -39,3 +41,4 @@ app.include_router(auth.router, prefix="/api/v1")
 app.include_router(admin.router, prefix="/api/v1")
 app.include_router(stations.router, prefix="/api/v1")
 app.include_router(incidents.router, prefix="/api/v1")
+app.include_router(notifications.router, prefix="/api/v1")

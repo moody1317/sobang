@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     FOREST_FIRE_API_KEY: str
     FOREST_FIRE_API_BASE_URL: str = "https://apis.data.go.kr/1400377/forestPointV2/forestPointListSigunguSearchV2"     
 
+    EARTHQUAKE_API_KEY: str
+    EARTHQUAKE_API_BASE_URL: str = "https://apis.data.go.kr/1360000/EqkInfoService/getEqkMsg"
+
     @property
     def DATABASE_URL(self) -> str:
         return (

@@ -12,3 +12,4 @@ import app.models.population_stat
 import app.models.fire_incident
 import app.models.fire_target
 import app.models.forest_fire_risk
+import app.models.active_risk_event

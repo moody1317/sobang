@@ -156,3 +156,14 @@ def get_users_by_station(db: Session, station_id: int):
         .order_by(User.created_at.desc())
         .all()
     )
+
+def delete_user(db: Session, firefighter_number: str) -> str:
+    user = get_user_by_firefighter_number(db, firefighter_number)
+    if not user:
+        raise ValueError("존재하지 않는 대원번호입니다.")
+
+    name = user.name
+    db.delete(user)
+    db.commit()
+
+    return name

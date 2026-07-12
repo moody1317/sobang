@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     EARTHQUAKE_API_KEY: str
     EARTHQUAKE_API_BASE_URL: str = "https://apis.data.go.kr/1360000/EqkInfoService/getEqkMsg"
 
+    WEATHER_WARNING_API_KEY: str
+    WEATHER_WARNING_API_BASE_URL: str = "https://apis.data.go.kr/1360000/WthrWrnInfoService/getPwnCd"
+
     @property
     def DATABASE_URL(self) -> str:
         return (

@@ -5,7 +5,7 @@ from app.api.deps import get_db_session, require_admin
 from app.models.user import User, UnitType
 from app.models.safety_center import SafetyCenter
 from app.schemas.user import UserCreate, UserResponse, UserCreateResponse, UserListResponse
-from app.services.auth_service import create_user, reset_user_password, get_users_by_station
+from app.services.auth_service import create_user, reset_user_password, get_users_by_station, delete_user
 from app.models.station import Station
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -68,3 +68,18 @@ def list_users(
         result.append(UserListResponse(**user_dict))
 
     return result
+
+@router.delete("/users/{firefighter_number}")
+def delete_existing_user(
+    firefighter_number: str,
+    db: Session = Depends(get_db_session),
+    admin_user: User = Depends(require_admin),
+):
+    if firefighter_number == admin_user.firefighter_number:
+        raise HTTPException(status_code=400, detail="본인 계정은 삭제할 수 없습니다.")
+
+    try:
+        name = delete_user(db, firefighter_number)
+        return {"message": f"{name}님의 계정이 삭제되었습니다."}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))

@@ -13,7 +13,7 @@ from app.schemas.inspection import InspectionCreate, InspectionCompleteRequest, 
 router = APIRouter(prefix="/inspections", tags=["inspections"])
 
 def _mark_patrol_day(db: Session, user_id: int, target_date) -> None:
-    """점검 등록 시, 담당 대원의 근무일정에 순찰 배지를 자동으로 켠다."""
+    """점검 완료 시, 담당 대원의 근무일정에 순찰 배지를 자동으로 켠다."""
     schedule = db.query(WorkSchedule).filter(
         WorkSchedule.user_id == user_id, WorkSchedule.date == target_date
     ).first()
@@ -58,8 +58,6 @@ def create_inspection(
     )
     db.add(inspection)
 
-    _mark_patrol_day(db, current_user.id, data.scheduled_date)
-    
     db.commit()
     db.refresh(inspection)
     return _to_response(db, inspection)
@@ -96,6 +94,9 @@ def complete_inspection(inspection_id: int, data: InspectionCompleteRequest, db:
     inspection.result_detail = data.result_detail
     inspection.next_inspection_date = data.next_inspection_date
     inspection.completed_at = datetime.now()
+
+    _mark_patrol_day(db, inspection.inspector_id, inspection.completed_at.date())
+
     db.commit()
     db.refresh(inspection)
     return _to_response(db, inspection)

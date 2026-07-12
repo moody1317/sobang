@@ -7,9 +7,27 @@ from app.api.deps import get_db_session, get_current_active_user
 from app.models.inspection import Inspection, InspectionStatus
 from app.models.user import User
 from app.models.jurisdiction import Jurisdiction
+from app.models.work_schedule import WorkSchedule, ShiftType
 from app.schemas.inspection import InspectionCreate, InspectionCompleteRequest, InspectionResponse
 
 router = APIRouter(prefix="/inspections", tags=["inspections"])
+
+def _mark_patrol_day(db: Session, user_id: int, target_date) -> None:
+    """점검 등록 시, 담당 대원의 근무일정에 순찰 배지를 자동으로 켠다."""
+    schedule = db.query(WorkSchedule).filter(
+        WorkSchedule.user_id == user_id, WorkSchedule.date == target_date
+    ).first()
+
+    if schedule:
+        schedule.is_patrol = True
+    else:
+        db.add(WorkSchedule(
+            user_id=user_id,
+            date=target_date,
+            shift_type=ShiftType.주간,   # 근무 기록이 아예 없던 날이면 기본값(주간)으로 생성
+            is_patrol=True,
+            is_education=False,
+        ))
 
 def _to_response(db: Session, inspection: Inspection) -> InspectionResponse:
     jurisdiction = db.query(Jurisdiction).filter(Jurisdiction.id == inspection.jurisdiction_id).first()
@@ -39,6 +57,9 @@ def create_inspection(
         note=data.note,
     )
     db.add(inspection)
+
+    _mark_patrol_day(db, current_user.id, data.scheduled_date)
+    
     db.commit()
     db.refresh(inspection)
     return _to_response(db, inspection)

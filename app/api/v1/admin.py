@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db_session, require_admin
+from app.api.deps import get_db_session, require_admin, require_station_scope
 from app.models.user import User, UnitType
 from app.models.safety_center import SafetyCenter
 from app.schemas.user import UserCreate, UserResponse, UserCreateResponse, UserListResponse
-from app.services.auth_service import create_user, reset_user_password, get_users_by_station, delete_user
+from app.services.auth_service import create_user, reset_user_password, get_users_by_station, delete_user, get_user_by_firefighter_number
 from app.models.station import Station
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -16,6 +16,8 @@ def create_new_user(
     db: Session = Depends(get_db_session),
     admin_user: User = Depends(require_admin),
 ):
+    require_station_scope(admin_user, user_data.station_id)
+
     try:
         new_user, temp_password = create_user(db=db, user_data=user_data)
         return UserCreateResponse(
@@ -35,6 +37,11 @@ def reset_password(
     db: Session = Depends(get_db_session),
     admin_user: User = Depends(require_admin),
 ):
+    target_user = get_user_by_firefighter_number(db, firefighter_number)
+    if not target_user:
+        raise HTTPException(status_code=404, detail="존재하지 않는 대원번호입니다.")
+    require_station_scope(admin_user, target_user.station_id)
+
     try:
         user, temp_password = reset_user_password(db, firefighter_number)
         return UserCreateResponse(
@@ -58,7 +65,7 @@ def list_users(
     for u in users:
         if u.unit_type == UnitType.SAFETY_CENTER:
             center = db.query(SafetyCenter).filter(SafetyCenter.id == u.safety_center_id).first()
-            unit_name = center.center_name if center else None
+            unit_name = center.station_name if center else None
         else:
             unit_name = u.unit_type.value
 
@@ -77,6 +84,11 @@ def delete_existing_user(
 ):
     if firefighter_number == admin_user.firefighter_number:
         raise HTTPException(status_code=400, detail="본인 계정은 삭제할 수 없습니다.")
+
+    target_user = get_user_by_firefighter_number(db, firefighter_number)
+    if not target_user:
+        raise HTTPException(status_code=404, detail="존재하지 않는 대원번호입니다.")
+    require_station_scope(admin_user, target_user.station_id)
 
     try:
         name = delete_user(db, firefighter_number)

@@ -115,6 +115,21 @@ def normalize_name(name: str) -> str:
         result = result.replace(token, "")
     return re.sub(r"\s", "", result)
 
+def match_ward(ward_name: str, all_centers: list[SafetyCenter], all_stations: list[Station]):
+    normalized_ward = normalize_name(ward_name)
+
+    for center in all_centers:
+        normalized_center = normalize_name(center.station_name)
+        if normalized_ward in normalized_center or normalized_center in normalized_ward:
+            return None, center.id
+
+    for station in all_stations:
+        normalized_station = normalize_name(station.station_name)
+        if normalized_ward in normalized_station or normalized_station in normalized_ward:
+            return station.id, None
+
+    return None, None
+
 def rematch_unmatched_jurisdictions(db: Session) -> dict:
     unmatched = (
         db.query(Jurisdiction)
@@ -125,26 +140,11 @@ def rematch_unmatched_jurisdictions(db: Session) -> dict:
     all_centers = db.query(SafetyCenter).all()
     all_stations = db.query(Station).all()
 
-    def match_ward(ward_name: str):
-        normalized_ward = normalize_name(ward_name)
-
-        for center in all_centers:
-            normalized_center = normalize_name(center.station_name)
-            if normalized_ward in normalized_center or normalized_center in normalized_ward:
-                return None, center.id
-
-        for station in all_stations:
-            normalized_station = normalize_name(station.station_name)
-            if normalized_ward in normalized_station or normalized_station in normalized_ward:
-                return station.id, None
-
-        return None, None
-
     matched = 0
     still_unmatched = []
 
     for j in unmatched:
-        station_id, safety_center_id = match_ward(j.ward_name)
+        station_id, safety_center_id = match_ward(j.ward_name, all_centers, all_stations)
         if station_id or safety_center_id:
             j.station_id = station_id
             j.safety_center_id = safety_center_id
@@ -156,21 +156,9 @@ def rematch_unmatched_jurisdictions(db: Session) -> dict:
     return {"matched": matched, "still_unmatched": still_unmatched}
 
 def match_ward_to_db(db: Session, ward_name: str):
-    normalized_ward = normalize_name(ward_name)
-
-    centers = db.query(SafetyCenter).all()
-    for center in centers:
-        normalized_center = normalize_name(center.station_name)   # center_name → station_name
-        if normalized_ward in normalized_center or normalized_center in normalized_ward:
-            return None, center.id
-
-    stations = db.query(Station).all()
-    for station in stations:
-        normalized_station = normalize_name(station.station_name)
-        if normalized_ward in normalized_station or normalized_station in normalized_ward:
-            return station.id, None
-
-    return None, None
+    all_centers = db.query(SafetyCenter).all()
+    all_stations = db.query(Station).all()
+    return match_ward(ward_name, all_centers, all_stations)
 
 def save_jurisdictions(db: Session, jurisdiction_data: list[dict]) -> dict:
     matched, unmatched = 0, 0
@@ -179,28 +167,13 @@ def save_jurisdictions(db: Session, jurisdiction_data: list[dict]) -> dict:
     all_centers = db.query(SafetyCenter).all()
     all_stations = db.query(Station).all()
 
-    def match_ward(ward_name: str):
-        normalized_ward = normalize_name(ward_name)
-
-        for center in all_centers:
-            normalized_center = normalize_name(center.station_name)   # center_name → station_name
-            if normalized_ward in normalized_center or normalized_center in normalized_ward:
-                return None, center.id
-
-        for station in all_stations:
-            normalized_station = normalize_name(station.station_name)
-            if normalized_ward in normalized_station or normalized_station in normalized_ward:
-                return station.id, None
-
-        return None, None
-
     for item in jurisdiction_data:
         ward_id = item["ward_id"]
         properties = item["properties"]
         ward_name = properties.get("ward_nm", "")
         geometry = to_multipolygon(item["geometries"])
 
-        station_id, safety_center_id = match_ward(ward_name)
+        station_id, safety_center_id = match_ward(ward_name, all_centers, all_stations)
         
         existing = db.query(Jurisdiction).filter(Jurisdiction.ward_id == ward_id).first()
         if existing:

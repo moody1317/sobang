@@ -65,3 +65,10 @@ def require_admin(current_user: User = Depends(get_current_active_user)):
             detail="관리자 권한이 필요합니다.",
         )
     return current_user
+
+def require_station_scope(admin_user: User, target_station_id: int):
+    if admin_user.role == "station_admin" and admin_user.station_id != target_station_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="소속 소방서의 대원만 관리할 수 있습니다.",
+        )

@@ -106,7 +106,7 @@ def update_my_profile(
         safety_center = db.query(SafetyCenter).filter(
             SafetyCenter.id == updated_user.safety_center_id
         ).first()
-        unit_name = safety_center.center_name if safety_center else station_name
+        unit_name = safety_center.station_name if safety_center else station_name
     else:
         unit_name = updated_user.unit_type.value
 

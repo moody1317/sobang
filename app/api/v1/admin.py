@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db_session, require_admin, require_station_scope
 from app.models.user import User, UnitType
 from app.models.safety_center import SafetyCenter
-from app.schemas.user import UserCreate, UserResponse, UserCreateResponse, UserListResponse
-from app.services.auth_service import create_user, reset_user_password, get_users_by_station, delete_user, get_user_by_firefighter_number
+from app.schemas.user import UserCreate, UserResponse, UserCreateResponse, UserListResponse, UserUnitUpdateRequest
+from app.services.auth_service import create_user, reset_user_password, get_users_by_station, delete_user, get_user_by_firefighter_number, update_user_unit
 from app.models.station import Station
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -95,3 +95,30 @@ def delete_existing_user(
         return {"message": f"{name}님의 계정이 삭제되었습니다."}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    
+# app/api/v1/admin.py — update_user 함수 수정본
+@router.patch("/users/{user_id}", response_model=UserResponse)
+def update_user(
+    user_id: int,
+    data: UserUnitUpdateRequest,
+    db: Session = Depends(get_db_session),
+    admin_user: User = Depends(require_admin),
+):
+    try:
+        updated_user = update_user_unit(db, user_id, data)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    station = db.query(Station).filter(Station.id == updated_user.station_id).first()
+    station_name = station.station_name if station else None
+
+    if updated_user.unit_type == UnitType.SAFETY_CENTER:
+        center = db.query(SafetyCenter).filter(SafetyCenter.id == updated_user.safety_center_id).first()
+        unit_name = center.station_name_name if center else None   
+    else:
+        unit_name = updated_user.unit_type.value
+
+    user_dict = UserResponse.model_validate(updated_user).model_dump()
+    user_dict["station_name"] = station_name
+    user_dict["unit_name"] = unit_name
+    return UserResponse(**user_dict)

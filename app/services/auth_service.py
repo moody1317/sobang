@@ -167,3 +167,20 @@ def delete_user(db: Session, firefighter_number: str) -> str:
     db.commit()
 
     return name
+
+def update_user_unit(db: Session, user_id: int, data: "UserUnitUpdateRequest") -> User:
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise ValueError("사용자를 찾을 수 없습니다.")
+
+    user.unit_type = data.unit_type
+    user.safety_center_id = data.safety_center_id if data.unit_type in (
+        UnitType.SAFETY_CENTER, UnitType.LOCAL_UNIT
+    ) else None
+
+    if data.station_id:
+        user.station_id = data.station_id
+
+    db.commit()
+    db.refresh(user)
+    return user

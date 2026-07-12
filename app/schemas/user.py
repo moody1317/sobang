@@ -59,3 +59,8 @@ class UserListResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class UserUnitUpdateRequest(BaseModel):
+    unit_type: UnitType
+    safety_center_id: Optional[int] = None
+    station_id: Optional[int] = None

@@ -121,3 +121,9 @@ def allocate_population_to_jurisdictions(db: Session, std_ym: str) -> dict:
         "no_sigungu_matched": no_sigungu,
         "empty_population_sigungu": empty_population_sigungu,
     }
+
+def extract_city_name(sigungu_full: str) -> str:
+    """'청주시 청원구' 같은 일반구 이름이면 'OO시'만 추출"""
+    if " " in sigungu_full:
+        return sigungu_full.split(" ")[0]
+    return sigungu_full

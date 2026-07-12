@@ -5,7 +5,8 @@ from pathlib import Path
 from app.core.config import settings
 from sqlalchemy.orm import Session
 from app.models.weather_warning import WeatherWarning
-from app.services.jurisdiction_population_service import get_jurisdiction_sigungu
+from app.models.station import Station
+from app.services.jurisdiction_population_service import get_jurisdiction_sigungu, extract_sigungu
 from app.services.notification_service import create_notification
 from app.models.notification import NotificationLevel
 from datetime import datetime
@@ -32,6 +33,16 @@ WARNING_IMPACT = {
 def resolve_sigungu_name(area_code: str) -> str:
     entry = WEATHER_HIERARCHY.get(area_code)
     return entry["sigungu_name"] if entry else None
+
+def get_station_ids_for_sigungu(db: Session, sigungu: str) -> list[int]:
+    """해당 sigungu를 관할하는 소방서 station_id 목록. 못 찾으면 빈 리스트(호출부에서 전역 발송으로 폴백)."""
+    if not sigungu:
+        return []
+    stations = db.query(Station).filter(Station.is_active == True).all()
+    return [
+        s.id for s in stations
+        if extract_sigungu(s.address, fallback_name=s.station_name) == sigungu
+    ]
 
 def get_active_warnings_for_jurisdiction(db: Session, jurisdiction) -> list[WeatherWarning]:
     sigungu = get_jurisdiction_sigungu(db, jurisdiction)  # 이미 있는 함수
@@ -86,14 +97,27 @@ def sync_weather_warnings(db: Session) -> dict:
                 existing.is_active = False
                 existing.cancelled_at = datetime.now()
                 newly_cancelled += 1
-                create_notification(
-                    db,
-                    level=NotificationLevel.SAFE,
-                    source="weather",
-                    title=sigungu or item.get("areaName"),
-                    message=f"{WARNING_TYPE_MAP.get(warn_var, '기상')}특보 해제",
-                    station_id=None,
-                )
+                station_ids = get_station_ids_for_sigungu(db, sigungu)
+                message = f"{WARNING_TYPE_MAP.get(warn_var, '기상')}특보 해제"
+                if station_ids:
+                    for sid in station_ids:
+                        create_notification(
+                            db,
+                            level=NotificationLevel.SAFE,
+                            source="weather",
+                            title=sigungu or item.get("areaName"),
+                            message=message,
+                            station_id=sid,
+                        )
+                else:
+                    create_notification(
+                        db,
+                        level=NotificationLevel.SAFE,
+                        source="weather",
+                        title=sigungu or item.get("areaName"),
+                        message=message,
+                        station_id=None,
+                    )
             continue
 
         if not existing:
@@ -112,14 +136,27 @@ def sync_weather_warnings(db: Session) -> dict:
             ))
             created += 1
             newly_issued += 1
-            create_notification(
-                db,
-                level=NotificationLevel.ALERT,
-                source="weather",
-                title=sigungu or item.get("areaName"),
-                message=f"{WARNING_TYPE_MAP.get(warn_var, '기상')}특보 발효",
-                station_id=None,
-            )
+            station_ids = get_station_ids_for_sigungu(db, sigungu)
+            message = f"{WARNING_TYPE_MAP.get(warn_var, '기상')}특보 발효"
+            if station_ids:
+                for sid in station_ids:
+                    create_notification(
+                        db,
+                        level=NotificationLevel.ALERT,
+                        source="weather",
+                        title=sigungu or item.get("areaName"),
+                        message=message,
+                        station_id=sid,
+                    )
+            else:
+                create_notification(
+                    db,
+                    level=NotificationLevel.ALERT,
+                    source="weather",
+                    title=sigungu or item.get("areaName"),
+                    message=message,
+                    station_id=None,
+                )
 
     db.commit()
     return {"created": created, "newly_issued": newly_issued, "newly_cancelled": newly_cancelled}

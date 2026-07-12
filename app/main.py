@@ -17,6 +17,7 @@ import app.models.notification
 from app.api.v1 import notifications
 
 from app.api.v1 import incident
+from app.api.v1 import weather
 
 app = FastAPI(
     title="Sobang Backend",
@@ -45,3 +46,4 @@ app.include_router(stations.router, prefix="/api/v1")
 app.include_router(incidents.router, prefix="/api/v1")
 app.include_router(notifications.router, prefix="/api/v1")
 app.include_router(incident.router, prefix="/api/v1")
+app.include_router(weather.router, prefix="/api/v1")

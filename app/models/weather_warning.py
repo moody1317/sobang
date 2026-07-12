@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Boolean
 from app.core.database import Base
 
 class WeatherWarning(Base):
@@ -11,6 +11,8 @@ class WeatherWarning(Base):
     warn_var = Column(Integer)              # 특보종류 코드 (1~12)
     warn_stress = Column(Integer)           # 0=주의보, 1=경보
     command = Column(Integer)               # 1=발표, 2=해제 등
+    is_active = Column(Boolean, nullable=False, default=True)
+    cancelled_at = Column(DateTime, nullable=True)
     cancel = Column(String(1))              # 0=정상, 1=취소
     tm_fc = Column(String(14))              # 발표시각
     start_time = Column(String(14))

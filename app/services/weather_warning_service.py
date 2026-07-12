@@ -71,20 +71,49 @@ def fetch_pwn_cd(stn_id: str, page_no: int = 1, num_of_rows: int = 300, area_cod
     response.raise_for_status()
     return response.json()
 
+# app/services/weather_warning_service.py
 def sync_weather_warnings(db: Session) -> dict:
     result = fetch_pwn_cd(stn_id="108")
     items = result.get("response", {}).get("body", {}).get("items", {}).get("item", [])
+
+    # 이번 sync 이전에 이미 활성 상태였던 (시군구, 특보종류) 조합
+    already_active_pairs = {
+        (w.sigungu_name, w.warn_var)
+        for w in db.query(WeatherWarning).filter(WeatherWarning.is_active == True).all()
+    }
+    notified_this_run = set()  # 이번 실행 안에서 이미 알림 보낸 조합
 
     created, newly_issued, newly_cancelled = 0, 0, 0
 
     for item in items:
         if item.get("cancel") == "1":
-            continue  # 행정적으로 무효 처리된 발표는 제외
+            continue
 
         area_code = item.get("areaCode")
         warn_var = item.get("warnVar")
         command = item.get("command")
         sigungu = resolve_sigungu_name(area_code)
+        pair = (sigungu, warn_var)
+
+        if command in (2, 8):
+            existing = db.query(WeatherWarning).filter(
+                WeatherWarning.area_code == area_code,
+                WeatherWarning.warn_var == warn_var,
+                WeatherWarning.is_active == True,
+            ).first()
+            if existing:
+                existing.is_active = False
+                existing.cancelled_at = datetime.now()
+                newly_cancelled += 1
+                if pair not in notified_this_run:
+                    notified_this_run.add(pair)
+                    create_notification(
+                        db, level=NotificationLevel.SAFE, source="weather",
+                        title=sigungu or item.get("areaName"),
+                        message=f"{WARNING_TYPE_MAP.get(warn_var)}특보 해제",
+                        station_id=None,
+                    )
+            continue
 
         existing = db.query(WeatherWarning).filter(
             WeatherWarning.area_code == area_code,
@@ -92,69 +121,24 @@ def sync_weather_warnings(db: Session) -> dict:
             WeatherWarning.is_active == True,
         ).first()
 
-        if command in (2, 8):  # 해제 / 변경해제
-            if existing:
-                existing.is_active = False
-                existing.cancelled_at = datetime.now()
-                newly_cancelled += 1
-                station_ids = get_station_ids_for_sigungu(db, sigungu)
-                message = f"{WARNING_TYPE_MAP.get(warn_var, '기상')}특보 해제"
-                if station_ids:
-                    for sid in station_ids:
-                        create_notification(
-                            db,
-                            level=NotificationLevel.SAFE,
-                            source="weather",
-                            title=sigungu or item.get("areaName"),
-                            message=message,
-                            station_id=sid,
-                        )
-                else:
-                    create_notification(
-                        db,
-                        level=NotificationLevel.SAFE,
-                        source="weather",
-                        title=sigungu or item.get("areaName"),
-                        message=message,
-                        station_id=None,
-                    )
-            continue
-
         if not existing:
             db.add(WeatherWarning(
-                area_code=area_code,
-                area_name=item.get("areaName"),
-                sigungu_name=sigungu,
-                warn_var=warn_var,
-                warn_stress=item.get("warnStress"),
-                command=command,
-                cancel=item.get("cancel"),
-                tm_fc=str(item.get("tmFc")),
-                start_time=str(item.get("startTime")),
-                end_time=str(item.get("endTime")),
+                area_code=area_code, area_name=item.get("areaName"), sigungu_name=sigungu,
+                warn_var=warn_var, warn_stress=item.get("warnStress"), command=command,
+                cancel=item.get("cancel"), tm_fc=str(item.get("tmFc")),
+                start_time=str(item.get("startTime")), end_time=str(item.get("endTime")),
                 is_active=True,
             ))
             created += 1
-            newly_issued += 1
-            station_ids = get_station_ids_for_sigungu(db, sigungu)
-            message = f"{WARNING_TYPE_MAP.get(warn_var, '기상')}특보 발효"
-            if station_ids:
-                for sid in station_ids:
-                    create_notification(
-                        db,
-                        level=NotificationLevel.ALERT,
-                        source="weather",
-                        title=sigungu or item.get("areaName"),
-                        message=message,
-                        station_id=sid,
-                    )
-            else:
+
+            # 이미 같은 시군구+특보종류로 활성 중이었거나, 이번 실행에서 이미 알림 보냈으면 스킵
+            if pair not in already_active_pairs and pair not in notified_this_run:
+                notified_this_run.add(pair)
+                newly_issued += 1
                 create_notification(
-                    db,
-                    level=NotificationLevel.ALERT,
-                    source="weather",
+                    db, level=NotificationLevel.ALERT, source="weather",
                     title=sigungu or item.get("areaName"),
-                    message=message,
+                    message=f"{WARNING_TYPE_MAP.get(warn_var)}특보 발효",
                     station_id=None,
                 )
 

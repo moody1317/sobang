@@ -69,6 +69,7 @@ def allocate_population_to_jurisdictions(db: Session, std_ym: str) -> dict:
     jurisdictions = db.query(Jurisdiction).filter(Jurisdiction.is_active == True).all()
 
     sigungu_groups: dict[str, list] = {}
+    no_geometry_jurisdictions: dict[str, list] = {}
     no_sigungu = []
 
     for j in jurisdictions:
@@ -76,18 +77,21 @@ def allocate_population_to_jurisdictions(db: Session, std_ym: str) -> dict:
         if not sigungu:
             no_sigungu.append(j.ward_name)
             continue
+
+        if not j.geometry:
+            no_geometry_jurisdictions.setdefault(sigungu, []).append(j)
+            continue
+
         area = geometry_area(j.geometry)
         sigungu_groups.setdefault(sigungu, []).append((j, area))
 
-    allocated = 0
+    allocated, approximated = 0, 0
     empty_population_sigungu = []
 
-    for sigungu, entries in sigungu_groups.items():
+    for sigungu in set(list(sigungu_groups.keys()) + list(no_geometry_jurisdictions.keys())):
+        entries = sigungu_groups.get(sigungu, [])
         total_area = sum(area for _, area in entries)
-        if total_area == 0:
-            continue
 
-        # 정확히 일치하는 것 + "OO시 OO구"처럼 하위 일반구까지 포함해서 다 합산
         pop_rows = (
             db.query(PopulationStat)
             .filter(
@@ -107,17 +111,36 @@ def allocate_population_to_jurisdictions(db: Session, std_ym: str) -> dict:
         total_female = sum(p.female_ppltn or 0 for p in pop_rows)
         total_elderly = sum(p.elderly_ppltn or 0 for p in pop_rows)
 
-        for jurisdiction, area in entries:
-            ratio = area / total_area
-            jurisdiction.allocated_total_ppltn = round(total_ppltn * ratio)
-            jurisdiction.allocated_female_ppltn = round(total_female * ratio)
-            jurisdiction.allocated_elderly_ppltn = round(total_elderly * ratio)
+        # 폴리곤 있는 관할구역: 면적 비율로 정밀 배분
+        avg_ppltn, avg_female, avg_elderly = 0, 0, 0
+        if total_area > 0:
+            for jurisdiction, area in entries:
+                ratio = area / total_area
+                jurisdiction.allocated_total_ppltn = round(total_ppltn * ratio)
+                jurisdiction.allocated_female_ppltn = round(total_female * ratio)
+                jurisdiction.allocated_elderly_ppltn = round(total_elderly * ratio)
+                jurisdiction.population_std_ym = std_ym
+                allocated += 1
+            avg_ppltn = sum(j.allocated_total_ppltn for j, _ in entries) / len(entries)
+            avg_female = sum(j.allocated_female_ppltn for j, _ in entries) / len(entries)
+            avg_elderly = sum(j.allocated_elderly_ppltn for j, _ in entries) / len(entries)
+        elif entries:
+            # 그 시군구 안에 폴리곤 있는 곳이 하나도 없으면, 시군구 전체를 균등 나눔
+            n = len(entries) or 1
+            avg_ppltn, avg_female, avg_elderly = total_ppltn / n, total_female / n, total_elderly / n
+
+        # 폴리곤 없는 관할구역: 같은 시군구 평균값으로 근사치 부여
+        for jurisdiction in no_geometry_jurisdictions.get(sigungu, []):
+            jurisdiction.allocated_total_ppltn = round(avg_ppltn)
+            jurisdiction.allocated_female_ppltn = round(avg_female)
+            jurisdiction.allocated_elderly_ppltn = round(avg_elderly)
             jurisdiction.population_std_ym = std_ym
-            allocated += 1
+            approximated += 1
 
     db.commit()
     return {
         "allocated": allocated,
+        "approximated": approximated,
         "no_sigungu_matched": no_sigungu,
         "empty_population_sigungu": empty_population_sigungu,
     }

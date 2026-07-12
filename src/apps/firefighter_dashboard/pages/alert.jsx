@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../layouts/dashboardlayout';
-import { useSetAlertCount } from '../contexts/alertcontext';
+import { useAlertCount, useRefreshAlertCount } from '../contexts/alertcontext';
 import { getNotifications, markNotificationRead } from '../../../api/notifications';
 import './alert.css';
 
@@ -34,9 +34,8 @@ function Alert() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
-  const setAlertCount = useSetAlertCount();
-
-  const unreadCount = alerts.filter((a) => !a.read).length;
+  const unreadCount = useAlertCount();
+  const refreshAlertCount = useRefreshAlertCount();
 
   const fetchAlerts = useCallback(async (offset) => {
     if (offset === 0) setLoading(true);
@@ -58,10 +57,6 @@ function Alert() {
     fetchAlerts(0);
   }, [fetchAlerts]);
 
-  useEffect(() => {
-    setAlertCount?.(unreadCount);
-  }, [unreadCount, setAlertCount]);
-
   function loadMore() {
     fetchAlerts(alerts.length);
   }
@@ -70,11 +65,13 @@ function Alert() {
     const unreadIds = alerts.filter((a) => !a.read).map((a) => a.id);
     setAlerts((prev) => prev.map((a) => ({ ...a, read: true })));
     await Promise.all(unreadIds.map((id) => markNotificationRead(id)));
+    refreshAlertCount?.();
   }
 
   async function markRead(id) {
     setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, read: true } : a)));
     await markNotificationRead(id);
+    refreshAlertCount?.();
   }
 
   return (

@@ -1,12 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser } from '../contexts/usercontext';
+import { createInspection, getMyJurisdictions } from '../../../api/inspections';
 import './inspectionAdd.css';
 
 const INSPECTION_TYPES = ['화재안전', '위험물', '소방시설', '피난시설', '산악대비'];
 
-function InspectionAddModal({ regionName, onClose }) {
+function InspectionAddModal({ regionName, onClose, onCreated }) {
   const user = useUser();
   const today = new Date().toISOString().slice(0, 10);
+  const [jurisdictions, setJurisdictions] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
   const [form, setForm] = useState({
     location: regionName ?? '',
     target: '',
@@ -16,8 +20,33 @@ function InspectionAddModal({ regionName, onClose }) {
     note: '',
   });
 
+  useEffect(() => {
+    getMyJurisdictions().then(setJurisdictions).catch(() => setJurisdictions([]));
+  }, []);
+
   function set(key) {
     return (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
+  }
+
+  async function handleSubmit() {
+    if (!form.jurisdictionId || !form.target) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await createInspection({
+        jurisdiction_id: Number(form.jurisdictionId),
+        target: form.target,
+        inspection_type: form.inspectionType,
+        scheduled_date: form.date,
+        note: form.note || null,
+      });
+      onCreated?.();
+      onClose();
+    } catch {
+      setError('점검 등록에 실패했습니다.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -41,14 +70,12 @@ function InspectionAddModal({ regionName, onClose }) {
         <div className="ia-body">
           <div className="ia-field">
             <label className="ia-label">행정구역 <span className="ia-required">*</span></label>
-            <div className="ia-input-wrap">
-              <i className="bi bi-geo-alt ia-input-icon" />
-              <input
-                className="ia-input ia-input--icon"
-                value={form.location}
-                onChange={set('location')}
-              />
-            </div>
+            <select className="ia-input" value={form.jurisdictionId} onChange={set('jurisdictionId')}>
+              <option value="">선택하세요</option>
+              {jurisdictions.map((j) => (
+                <option key={j.id} value={j.id}>{j.ward_name}</option>
+              ))}
+            </select>
           </div>
 
           <div className="ia-field">
@@ -98,11 +125,15 @@ function InspectionAddModal({ regionName, onClose }) {
               style={{resize: 'none'}}
             />
           </div>
+
+          {error && <p className="ia-error">{error}</p>}
         </div>
 
         <div className="ia-footer">
           <button className="ia-btn-cancel" onClick={onClose}>취소</button>
-          <button className="ia-btn-confirm" onClick={onClose}>점검 등록</button>
+          <button className="ia-btn-confirm" onClick={handleSubmit} disabled={saving}>
+            {saving ? '등록 중…' : '점검 등록'}
+          </button>
         </div>
       </div>
     </div>

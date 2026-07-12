@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import DashboardLayout from '../layouts/dashboardlayout';
 import { useUser } from '../contexts/usercontext';
+import { getMySchedule, upsertMySchedule } from '../../../api/schedule';
 import './schedule.css';
 
 const WORK_TYPES = [
@@ -16,37 +17,23 @@ function dateKey(year, month, day) {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-function buildDefaultMonth(year, month) {
-  const total = new Date(year, month + 1, 0).getDate();
-  const data = {};
-  for (let d = 1; d <= total; d++) {
-    data[dateKey(year, month, d)] = {
-      workType: '주간', start: '09:00', end: '18:00', patrol: false, training: false, records: 0,
-    };
-  }
-  return data;
-}
+const DEFAULT_DAY = { workType: '주간', start: '09:00', end: '18:00', patrol: false, training: false, records: 0 };
 
-// June 2026 mock data (matches screenshot)
-const JUNE = buildDefaultMonth(2026, 5);
-JUNE['2026-06-02'] = { ...JUNE['2026-06-02'], records: 2 };
-JUNE['2026-06-06'] = { ...JUNE['2026-06-06'], records: 1 };
-JUNE['2026-06-09'] = { ...JUNE['2026-06-09'], patrol: true };
-JUNE['2026-06-11'] = { ...JUNE['2026-06-11'], records: 2 };
-JUNE['2026-06-14'] = { ...JUNE['2026-06-14'], training: true };
-JUNE['2026-06-15'] = { ...JUNE['2026-06-15'], records: 1 };
-JUNE['2026-06-19'] = { ...JUNE['2026-06-19'], patrol: true, records: 1 };
-JUNE['2026-06-20'] = { ...JUNE['2026-06-20'], records: 1 };
+function toEntry(item) {
+  return {
+    workType: item.shift_type,
+    start: item.start_time?.slice(0, 5) ?? DEFAULT_DAY.start,
+    end: item.end_time?.slice(0, 5) ?? DEFAULT_DAY.end,
+    patrol: item.is_patrol,
+    training: item.is_education,
+    records: 0,
+  };
+}
 
 const realToday = new Date();
 const INIT_YEAR  = realToday.getFullYear();
 const INIT_MONTH = realToday.getMonth();
 const INIT_DAY   = realToday.getDate();
-
-const INIT_SCHEDULE = {
-  ...JUNE,
-  ...buildDefaultMonth(INIT_YEAR, INIT_MONTH),
-};
 
 function SchedulePage() {
   const user = useUser();
@@ -57,16 +44,25 @@ function SchedulePage() {
   const [viewYear,  setViewYear]  = useState(INIT_YEAR);
   const [viewMonth, setViewMonth] = useState(INIT_MONTH);
   const [selectedDay, setSelectedDay] = useState(INIT_DAY);
-  const [schedule, setSchedule]   = useState(INIT_SCHEDULE);
+  const [schedule, setSchedule]   = useState({});
+
+  const fetchSchedule = useCallback(async () => {
+    const items = await getMySchedule(viewYear, viewMonth + 1);
+    const data = {};
+    for (const item of items) data[item.date] = toEntry(item);
+    setSchedule(data);
+  }, [viewYear, viewMonth]);
+
+  useEffect(() => {
+    fetchSchedule();
+  }, [fetchSchedule]);
 
   const daysInMonth  = new Date(viewYear, viewMonth + 1, 0).getDate();
   const firstWeekday = new Date(viewYear, viewMonth, 1).getDay();
   const offset       = (firstWeekday + 6) % 7; // Monday-first
 
   const selKey  = dateKey(viewYear, viewMonth, selectedDay);
-  const dayData = schedule[selKey] ?? {
-    workType: '주간', start: '09:00', end: '18:00', patrol: false, training: false, records: 0,
-  };
+  const dayData = schedule[selKey] ?? DEFAULT_DAY;
 
   const selDate    = new Date(viewYear, viewMonth, selectedDay);
   const weekdayStr = WEEKDAY_NAMES[selDate.getDay()];
@@ -97,8 +93,16 @@ function SchedulePage() {
     setSelectedDay(1);
   }
 
-  function updateDay(patch) {
-    setSchedule(prev => ({ ...prev, [selKey]: { ...dayData, ...patch } }));
+  async function updateDay(patch) {
+    const next = { ...dayData, ...patch };
+    setSchedule(prev => ({ ...prev, [selKey]: next }));
+    await upsertMySchedule(selKey, {
+      shift_type: next.workType,
+      start_time: next.start,
+      end_time: next.end,
+      is_patrol: next.patrol,
+      is_education: next.training,
+    });
   }
 
   // Build cell list (null = empty offset cell)
@@ -138,7 +142,7 @@ function SchedulePage() {
             {cells.map((day, i) => {
               if (!day) return <div key={`e${i}`} className="sch-cell sch-cell--empty" />;
               const k   = dateKey(viewYear, viewMonth, day);
-              const d   = schedule[k] ?? { workType: '주간', patrol: false, training: false, records: 0 };
+              const d   = schedule[k] ?? DEFAULT_DAY;
               const wt  = d.workType === '주간' ? 'blue' : d.workType === '야간' ? 'purple' : 'gray';
               const sel = day === selectedDay;
               const tod = k === todayKey;
@@ -165,13 +169,11 @@ function SchedulePage() {
                     {d.patrol && (
                       <span className="sch-act-row">
                         <i className="bi bi-send sch-act-icon sch-act-icon--patrol" />
-                        <span className="sch-act-text">기록1</span>
                       </span>
                     )}
                     {d.training && (
                       <span className="sch-act-row">
                         <i className="bi bi-mortarboard sch-act-icon sch-act-icon--training" />
-                        <span className="sch-act-text">기록1</span>
                       </span>
                     )}
                   </div>

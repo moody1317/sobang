@@ -111,7 +111,28 @@
 
 .insp-col--right {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 8px;
+}
+
+.insp-action-btn {
+  padding: 5px 12px;
+  border-radius: var(--radius-btn);
+  border: 1px solid var(--color-brand-border);
+  background: var(--color-brand-bg-alt);
+  color: var(--color-brand);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.insp-action-btn:hover {
+  background: var(--color-brand);
+  border-color: var(--color-brand);
+  color: #fff;
 }
 
 .insp-date {

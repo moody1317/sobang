@@ -114,7 +114,7 @@ def update_user(
 
     if updated_user.unit_type == UnitType.SAFETY_CENTER:
         center = db.query(SafetyCenter).filter(SafetyCenter.id == updated_user.safety_center_id).first()
-        unit_name = center.station_name_name if center else None   
+        unit_name = center.station_name if center else None   
     else:
         unit_name = updated_user.unit_type.value
 

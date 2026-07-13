@@ -21,6 +21,7 @@ from app.api.v1 import weather
 from app.api.v1 import inspection
 from app.api.v1 import jurisdiction
 from app.api.v1 import work_schedule
+from app.api.v1 import statistics
 
 app = FastAPI(
     title="Sobang Backend",
@@ -53,3 +54,4 @@ app.include_router(weather.router, prefix="/api/v1")
 app.include_router(inspection.router, prefix="/api/v1")
 app.include_router(jurisdiction.router, prefix="/api/v1")
 app.include_router(work_schedule.router, prefix="/api/v1")
+app.include_router(statistics.router, prefix="/api/v1")

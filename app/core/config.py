@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     WEATHER_WARNING_API_KEY: str
     WEATHER_WARNING_API_BASE_URL: str = "https://apis.data.go.kr/1360000/WthrWrnInfoService/getPwnCd"
 
+    EMERGENCY_INFO_API_KEY: str
+    EMERGENCY_INFO_API_BASE_URL: str = "http://apis.data.go.kr/1661000/EmergencyInformationService/getEmgPatientTransferInfo"
+
     @property
     def DATABASE_URL(self) -> str:
         return (

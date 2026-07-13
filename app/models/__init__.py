@@ -17,3 +17,5 @@ import app.models.weather_warning
 import app.models.ems_incident
 import app.models.inspection
 import app.models.work_schedule
+import app.models.mountain_accident
+import app.models.rescue_accident

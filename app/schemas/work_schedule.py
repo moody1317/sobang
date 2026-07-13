@@ -20,3 +20,7 @@ class WorkScheduleResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class BulkEducationRequest(BaseModel):
+    title: str
+    date: date_type

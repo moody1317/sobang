@@ -1,0 +1,69 @@
+.patrol-login {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 32px 24px;
+  gap: 28px;
+}
+
+.patrol-login-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.patrol-login-icon {
+  font-size: 26px;
+  color: var(--color-brand);
+}
+
+.patrol-login-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.patrol-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.patrol-login-input {
+  height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-input);
+  font-size: 14px;
+  color: var(--color-text-primary);
+  background: var(--color-bg-white);
+  outline: none;
+}
+
+.patrol-login-input:focus {
+  border-color: var(--color-brand);
+}
+
+.patrol-login-error {
+  font-size: 13px;
+  color: var(--color-error);
+  margin: 0;
+}
+
+.patrol-login-btn {
+  height: 48px;
+  border: none;
+  border-radius: var(--radius-btn);
+  background: var(--color-brand);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.patrol-login-btn:hover {
+  background: var(--color-brand-dark);
+}

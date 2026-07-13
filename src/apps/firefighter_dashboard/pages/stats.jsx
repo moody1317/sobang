@@ -32,7 +32,7 @@ const TIME_DATA = [
 
 const SUMMARY = [
   {
-    label: '누적 출동 (최근 3년)',
+    label: '누적 출동 (최근 1년)',
     render: () => (
       <><span className="stats-kpi-num">4,625</span><span className="stats-kpi-unit">건</span></>
     ),

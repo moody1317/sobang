@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import DashboardLayout from '../layouts/dashboardlayout';
 import { useUser } from '../contexts/usercontext';
 import { getMySchedule, upsertMySchedule } from '../../../api/schedule';
+import TrainingBulkAddModal from './trainingBulkAdd';
 import './schedule.css';
 
 const WORK_TYPES = [
@@ -45,6 +46,7 @@ function SchedulePage() {
   const [viewMonth, setViewMonth] = useState(INIT_MONTH);
   const [selectedDay, setSelectedDay] = useState(INIT_DAY);
   const [schedule, setSchedule]   = useState({});
+  const [showTrainingModal, setShowTrainingModal] = useState(false);
 
   const fetchSchedule = useCallback(async () => {
     const items = await getMySchedule(viewYear, viewMonth + 1);
@@ -105,7 +107,6 @@ function SchedulePage() {
     });
   }
 
-  // Build cell list (null = empty offset cell)
   const cells = [
     ...Array(offset).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
@@ -257,7 +258,7 @@ function SchedulePage() {
             )}
 
             {isAdmin && (
-              <button className="sch-admin-btn">
+              <button className="sch-admin-btn" onClick={() => setShowTrainingModal(true)}>
                 <i className="bi bi-people" />
                 관리자·교육 일괄 등록
               </button>
@@ -300,6 +301,16 @@ function SchedulePage() {
 
         </div>
       </div>
+
+      {showTrainingModal && (
+        <TrainingBulkAddModal
+          viewYear={viewYear}
+          viewMonth={viewMonth}
+          defaultDay={selectedDay}
+          onClose={() => setShowTrainingModal(false)}
+          onRegistered={fetchSchedule}
+        />
+      )}
     </DashboardLayout>
   );
 }

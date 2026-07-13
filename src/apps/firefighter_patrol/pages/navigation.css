@@ -1,0 +1,123 @@
+.patrol-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.patrol-nav-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--color-brand);
+  color: #fff;
+}
+
+.patrol-nav-banner i {
+  font-size: 20px;
+}
+
+.patrol-nav-banner-text {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.patrol-nav-map {
+  flex: 1;
+  min-height: 0;
+}
+
+.patrol-nav-card {
+  background: var(--color-bg-white);
+  border-top: 1px solid var(--color-border-card);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.patrol-nav-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.patrol-nav-card-icon {
+  font-size: 20px;
+  color: var(--color-brand);
+}
+
+.patrol-nav-card-title {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.patrol-nav-card-sub {
+  display: block;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.patrol-nav-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.patrol-nav-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.patrol-nav-stat-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.patrol-nav-stat-label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.patrol-nav-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.patrol-nav-actions--single {
+  grid-template-columns: 1fr;
+}
+
+.patrol-nav-btn {
+  height: 46px;
+  border-radius: var(--radius-btn);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.patrol-nav-btn--ghost {
+  border: 1px solid var(--color-border-input);
+  background: var(--color-bg-white);
+  color: var(--color-text-secondary);
+}
+
+.patrol-nav-arrived-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 46px;
+  border-radius: var(--radius-btn);
+  background: var(--color-success-bg);
+  color: var(--color-success-dark);
+  font-size: 14px;
+  font-weight: 700;
+}

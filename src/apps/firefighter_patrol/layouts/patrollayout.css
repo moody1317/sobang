@@ -1,0 +1,15 @@
+.patrol-layout {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  background: var(--color-bg-surface);
+}
+
+.patrol-frame {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  background: var(--color-bg-page);
+  display: flex;
+  flex-direction: column;
+}

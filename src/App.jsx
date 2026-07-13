@@ -15,6 +15,11 @@ import PriorityPage from './apps/firefighter_dashboard/pages/priority';
 import Stats from './apps/firefighter_dashboard/pages/stats';
 import InspectionPage from './apps/firefighter_dashboard/pages/inspection';
 import SchedulePage from './apps/firefighter_dashboard/pages/schedule';
+import PatrolProtectedRoute from './apps/firefighter_patrol/components/PatrolProtectedRoute';
+import PatrolLogin from './apps/firefighter_patrol/pages/login';
+import PatrolHome from './apps/firefighter_patrol/pages/patrolhome';
+import PatrolDispatch from './apps/firefighter_patrol/pages/dispatch';
+import PatrolNavigation from './apps/firefighter_patrol/pages/navigation';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './shared/style/global.css';
 
@@ -112,6 +117,31 @@ function App() {
               <ProtectedRoute>
                 <SchedulePage />
               </ProtectedRoute>
+            }
+          />
+          <Route path='/firefighter_patrol/login' element={<PatrolLogin />} />
+          <Route
+            path='/firefighter_patrol'
+            element={
+              <PatrolProtectedRoute>
+                <PatrolHome />
+              </PatrolProtectedRoute>
+            }
+          />
+          <Route
+            path='/firefighter_patrol/dispatch'
+            element={
+              <PatrolProtectedRoute>
+                <PatrolDispatch />
+              </PatrolProtectedRoute>
+            }
+          />
+          <Route
+            path='/firefighter_patrol/navigation'
+            element={
+              <PatrolProtectedRoute>
+                <PatrolNavigation />
+              </PatrolProtectedRoute>
             }
           />
         </Routes>

@@ -235,6 +235,26 @@
   color: var(--color-error);
 }
 
+.ia-info {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--color-success-bg);
+  border: 1px solid var(--color-success-border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-success-dark);
+  line-height: 1.5;
+}
+
+.ia-info i {
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
 /* ── Footer ── */
 .ia-footer {
   display: grid;

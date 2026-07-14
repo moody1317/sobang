@@ -1,0 +1,120 @@
+diff --git a/src/apps/firefighter_patrol/pages/patrolhome.css b/src/apps/firefighter_patrol/pages/patrolhome.css
+index da0acc2..3e7f3b1 100644
+--- a/src/apps/firefighter_patrol/pages/patrolhome.css
++++ b/src/apps/firefighter_patrol/pages/patrolhome.css
+@@ -17,6 +17,34 @@
+   color: var(--color-text-primary);
+ }
+ 
++.patrol-marker {
++  width: 34px;
++  height: 34px;
++  border-radius: 50%;
++  display: flex;
++  align-items: center;
++  justify-content: center;
++  color: #fff;
++  font-size: 15px;
++  border: 2px solid #fff;
++  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
++  cursor: pointer;
++}
++
++.patrol-marker--danger  { background: var(--color-risk-danger); }
++.patrol-marker--caution { background: var(--color-risk-caution); }
++.patrol-marker--warning { background: var(--color-risk-warning); }
++.patrol-marker--safe    { background: var(--color-risk-safe); }
++
++.patrol-marker--me {
++  width: 20px;
++  height: 20px;
++  border: 3px solid #fff;
++  background: #3182f6;
++  box-shadow: 0 0 0 4px rgba(49, 130, 246, 0.25);
++  cursor: default;
++}
++
+ .patrol-zone-list {
+   flex: 1;
+   overflow-y: auto;
+diff --git a/src/apps/firefighter_patrol/pages/patrolhome.jsx b/src/apps/firefighter_patrol/pages/patrolhome.jsx
+index 2b6e371..33cfb7f 100644
+--- a/src/apps/firefighter_patrol/pages/patrolhome.jsx
++++ b/src/apps/firefighter_patrol/pages/patrolhome.jsx
+@@ -6,6 +6,21 @@ import './patrolhome.css';
+ 
+ const LEVEL_CLASS = { 위험: 'danger', 경계: 'caution', 주의: 'warning', 안전: 'safe' };
+ 
++const ZONE_ICON = {
++  침수: 'bi-droplet-fill',
++  화재취약: 'bi-fire',
++  건물붕괴: 'bi-building',
++  산불: 'bi-fire',
++  산사태: 'bi-exclamation-octagon-fill',
++};
++
++function createZoneMarkerElement(zone) {
++  const el = document.createElement('div');
++  el.className = `patrol-marker patrol-marker--${LEVEL_CLASS[zone.level] ?? ''}`;
++  el.innerHTML = `<i class="bi ${ZONE_ICON[zone.type] ?? 'bi-exclamation-triangle-fill'}"></i>`;
++  return el;
++}
++
+ function PatrolHome() {
+   const mapContainerRef = useRef(null);
+ 
+@@ -19,26 +34,39 @@ function PatrolHome() {
+       });
+ 
+       RISK_ZONES.forEach((zone) => {
+-        const marker = new kakao.maps.Marker({
+-          position: new kakao.maps.LatLng(zone.lat, zone.lng),
++        const position = new kakao.maps.LatLng(zone.lat, zone.lng);
++        const markerEl = createZoneMarkerElement(zone);
++
++        new kakao.maps.CustomOverlay({
++          position,
++          content: markerEl,
++          xAnchor: 0.5,
++          yAnchor: 0.5,
+           map,
+         });
+ 
+         const infoWindow = new kakao.maps.InfoWindow({
++          position,
+           content: `<div class="patrol-map-infowindow">${zone.type} · ${zone.name}</div>`,
+         });
+ 
+-        kakao.maps.event.addListener(marker, 'click', () => {
+-          infoWindow.open(map, marker);
++        markerEl.addEventListener('click', () => {
++          infoWindow.open(map);
+         });
+       });
+ 
+       if (!navigator.geolocation) return;
+ 
+-      const currentMarker = new kakao.maps.Marker({
++      const currentMarkerEl = document.createElement('div');
++      currentMarkerEl.className = 'patrol-marker patrol-marker--me';
++
++      const currentOverlay = new kakao.maps.CustomOverlay({
+         position: map.getCenter(),
+-        map,
++        content: currentMarkerEl,
++        xAnchor: 0.5,
++        yAnchor: 0.5,
+         zIndex: 10,
++        map,
+       });
+ 
+       watchId = navigator.geolocation.watchPosition((position) => {
+@@ -46,7 +74,7 @@ function PatrolHome() {
+           position.coords.latitude,
+           position.coords.longitude
+         );
+-        currentMarker.setPosition(currentPos);
++        currentOverlay.setPosition(currentPos);
+         map.setCenter(currentPos);
+       });
+     });

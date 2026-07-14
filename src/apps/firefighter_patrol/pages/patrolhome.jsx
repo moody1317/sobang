@@ -6,6 +6,21 @@ import './patrolhome.css';
 
 const LEVEL_CLASS = { 위험: 'danger', 경계: 'caution', 주의: 'warning', 안전: 'safe' };
 
+const ZONE_ICON = {
+  침수: 'bi-droplet-fill',
+  화재취약: 'bi-fire',
+  건물붕괴: 'bi-building',
+  산불: 'bi-fire',
+  산사태: 'bi-exclamation-octagon-fill',
+};
+
+function createZoneMarkerElement(zone) {
+  const el = document.createElement('div');
+  el.className = `patrol-marker patrol-marker--${LEVEL_CLASS[zone.level] ?? ''}`;
+  el.innerHTML = `<i class="bi ${ZONE_ICON[zone.type] ?? 'bi-exclamation-triangle-fill'}"></i>`;
+  return el;
+}
+
 function PatrolHome() {
   const mapContainerRef = useRef(null);
 
@@ -15,30 +30,43 @@ function PatrolHome() {
     loadKakaoMap().then((kakao) => {
       const map = new kakao.maps.Map(mapContainerRef.current, {
         center: new kakao.maps.LatLng(36.6395, 127.4897),
-        level: 6,
+        level: 3,
       });
 
       RISK_ZONES.forEach((zone) => {
-        const marker = new kakao.maps.Marker({
-          position: new kakao.maps.LatLng(zone.lat, zone.lng),
+        const position = new kakao.maps.LatLng(zone.lat, zone.lng);
+        const markerEl = createZoneMarkerElement(zone);
+
+        new kakao.maps.CustomOverlay({
+          position,
+          content: markerEl,
+          xAnchor: 0.5,
+          yAnchor: 0.5,
           map,
         });
 
         const infoWindow = new kakao.maps.InfoWindow({
+          position,
           content: `<div class="patrol-map-infowindow">${zone.type} · ${zone.name}</div>`,
         });
 
-        kakao.maps.event.addListener(marker, 'click', () => {
-          infoWindow.open(map, marker);
+        markerEl.addEventListener('click', () => {
+          infoWindow.open(map);
         });
       });
 
       if (!navigator.geolocation) return;
 
-      const currentMarker = new kakao.maps.Marker({
+      const currentMarkerEl = document.createElement('div');
+      currentMarkerEl.className = 'patrol-marker patrol-marker--me';
+
+      const currentOverlay = new kakao.maps.CustomOverlay({
         position: map.getCenter(),
-        map,
+        content: currentMarkerEl,
+        xAnchor: 0.5,
+        yAnchor: 0.5,
         zIndex: 10,
+        map,
       });
 
       watchId = navigator.geolocation.watchPosition((position) => {
@@ -46,7 +74,7 @@ function PatrolHome() {
           position.coords.latitude,
           position.coords.longitude
         );
-        currentMarker.setPosition(currentPos);
+        currentOverlay.setPosition(currentPos);
         map.setCenter(currentPos);
       });
     });

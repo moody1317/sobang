@@ -3,10 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import PatrolLayout from '../layouts/patrollayout';
 import { loadKakaoMap } from '../utils/loadKakaoMap';
 import { RISK_ZONES } from '../data/riskZones';
+import { getRoute } from '../../../api/navigation';
+import '../style/markers.css';
 import './navigation.css';
 
 const DESTINATION = RISK_ZONES.find((zone) => zone.type === '건물붕괴');
 const ARRIVAL_THRESHOLD_METERS = 100;
+const GUIDE_ADVANCE_THRESHOLD_METERS = 30;
+const FOLLOW_ZOOM_LEVEL = 4;
 
 function getDistanceMeters(lat1, lng1, lat2, lng2) {
   const R = 6371000;
@@ -23,9 +27,14 @@ function PatrolNavigation() {
   const mapContainerRef = useRef(null);
   const navigate = useNavigate();
   const [arrived, setArrived] = useState(false);
+  const [route, setRoute] = useState(null);
+  const [guideIndex, setGuideIndex] = useState(1);
 
   useEffect(() => {
     let watchId;
+    const guidesRef = { current: [] };
+    const guideIndexRef = { current: 1 };
+    const followingRef = { current: false };
 
     loadKakaoMap().then((kakao) => {
       const destPos = new kakao.maps.LatLng(DESTINATION.lat, DESTINATION.lng);
@@ -35,29 +44,67 @@ function PatrolNavigation() {
         level: 5,
       });
 
-      new kakao.maps.Marker({ position: destPos, map });
+      const destEl = document.createElement('div');
+      destEl.className = 'patrol-marker patrol-marker--danger';
+      destEl.innerHTML = '<i class="bi bi-building"></i>';
+      new kakao.maps.CustomOverlay({ position: destPos, content: destEl, xAnchor: 0.5, yAnchor: 0.5, map });
 
-      const currentMarker = new kakao.maps.Marker({
-        position: map.getCenter(),
-        map,
+      const currentEl = document.createElement('div');
+      currentEl.className = 'patrol-marker patrol-marker--me';
+      const currentOverlay = new kakao.maps.CustomOverlay({
+        position: destPos,
+        content: currentEl,
+        xAnchor: 0.5,
+        yAnchor: 0.5,
         zIndex: 10,
+        map,
       });
 
-      const polyline = new kakao.maps.Polyline({
-        path: [map.getCenter(), destPos],
-        strokeWeight: 5,
-        strokeColor: '#B5333D',
-        strokeOpacity: 0.9,
+      navigator.geolocation.getCurrentPosition((position) => {
+        const { latitude, longitude } = position.coords;
+
+        getRoute(latitude, longitude, DESTINATION.lat, DESTINATION.lng).then((data) => {
+          setRoute(data);
+          guidesRef.current = data.guides;
+
+          const path = data.path.map((p) => new kakao.maps.LatLng(p.lat, p.lng));
+          const polyline = new kakao.maps.Polyline({
+            path,
+            strokeWeight: 5,
+            strokeColor: '#B5333D',
+            strokeOpacity: 0.9,
+          });
+          polyline.setMap(map);
+
+          const currentPos = new kakao.maps.LatLng(latitude, longitude);
+          map.setLevel(FOLLOW_ZOOM_LEVEL);
+          map.setCenter(currentPos);
+          followingRef.current = true;
+        });
       });
-      polyline.setMap(map);
 
       if (!navigator.geolocation) return;
 
       watchId = navigator.geolocation.watchPosition((position) => {
         const { latitude, longitude } = position.coords;
         const currentPos = new kakao.maps.LatLng(latitude, longitude);
-        currentMarker.setPosition(currentPos);
-        polyline.setPath([currentPos, destPos]);
+        currentOverlay.setPosition(currentPos);
+
+        if (followingRef.current) {
+          map.setLevel(FOLLOW_ZOOM_LEVEL);
+          map.panTo(currentPos);
+        }
+
+        const guides = guidesRef.current;
+        const nextGuide = guides[guideIndexRef.current];
+        if (
+          nextGuide &&
+          guideIndexRef.current < guides.length - 1 &&
+          getDistanceMeters(latitude, longitude, nextGuide.lat, nextGuide.lng) <= GUIDE_ADVANCE_THRESHOLD_METERS
+        ) {
+          guideIndexRef.current += 1;
+          setGuideIndex(guideIndexRef.current);
+        }
 
         if (getDistanceMeters(latitude, longitude, DESTINATION.lat, DESTINATION.lng) <= ARRIVAL_THRESHOLD_METERS) {
           setArrived(true);
@@ -72,13 +119,16 @@ function PatrolNavigation() {
     };
   }, []);
 
+  const currentGuide = route?.guides?.[guideIndex];
+  const eta = route ? new Date(Date.now() + route.duration_s * 1000) : null;
+
   return (
     <PatrolLayout>
       <div className="patrol-nav">
         <div className="patrol-nav-banner">
           <i className={`bi ${arrived ? 'bi-check-circle-fill' : 'bi-arrow-up-circle-fill'}`} />
           <span className="patrol-nav-banner-text">
-            {arrived ? '현장 도착' : `${DESTINATION.name} 방면 직진`}
+            {arrived ? '현장 도착' : currentGuide?.name ?? '경로 탐색 중...'}
           </span>
         </div>
 
@@ -95,15 +145,21 @@ function PatrolNavigation() {
 
           <div className="patrol-nav-stats">
             <div className="patrol-nav-stat">
-              <span className="patrol-nav-stat-value">약 4분</span>
+              <span className="patrol-nav-stat-value">
+                {route ? `약 ${Math.round(route.duration_s / 60)}분` : '-'}
+              </span>
               <span className="patrol-nav-stat-label">예상 소요</span>
             </div>
             <div className="patrol-nav-stat">
-              <span className="patrol-nav-stat-value">1.5km</span>
+              <span className="patrol-nav-stat-value">
+                {route ? `${(route.distance_m / 1000).toFixed(1)}km` : '-'}
+              </span>
               <span className="patrol-nav-stat-label">남은 거리</span>
             </div>
             <div className="patrol-nav-stat">
-              <span className="patrol-nav-stat-value">14:32</span>
+              <span className="patrol-nav-stat-value">
+                {eta ? `${String(eta.getHours()).padStart(2, '0')}:${String(eta.getMinutes()).padStart(2, '0')}` : '-'}
+              </span>
               <span className="patrol-nav-stat-label">도착 예정</span>
             </div>
           </div>

@@ -19,7 +19,6 @@ const MONTHLY_DATA = [
 const TYPE_DATA = [
   { label: '화재', count: 982,  pct: 21, color: 'var(--color-risk-danger)' },
   { label: '구급', count: 2772, pct: 60, color: 'var(--color-blue)' },
-  { label: '구조', count: 675,  pct: 15, color: 'var(--color-risk-caution)' },
   { label: '산악', count: 196,  pct: 4,  color: 'var(--color-risk-safe)' },
 ];
 

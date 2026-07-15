@@ -4,7 +4,7 @@ import DashboardLayout from '../layouts/dashboardlayout';
 import InspectionAddModal from './inspectionAdd';
 import './danger.css';
 
-const ACCIDENT_TYPES = ['전체', '화재', '구급', '구조'];
+const ACCIDENT_TYPES = ['전체', '화재', '구급'];
 const PERIODS = ['최근 1년', '최근 3년', '전체'];
 const LEVEL_CLASS = { 위험: 'danger', 경계: 'caution', 주의: 'warning', 안전: 'safe' };
 
@@ -21,7 +21,7 @@ const MOCK_REGION = {
   types: [
     { label: '화재', count: 96,  pct: 18, color: 'var(--color-risk-danger)' },
     { label: '구급', count: 360, pct: 69, color: 'var(--color-blue)' },
-    { label: '구조', count: 68,  pct: 13, color: 'var(--color-risk-caution)' },
+    { label: '산악', count: 68,  pct: 13, color: 'var(--color-risk-safe)' },
   ],
   timeSlots: [
     { label: '심야', count: 94 },

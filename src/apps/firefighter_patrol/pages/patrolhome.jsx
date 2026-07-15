@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import PatrolLayout from '../layouts/patrollayout';
 import { loadKakaoMap } from '../utils/loadKakaoMap';
 import { RISK_ZONES } from '../data/riskZones';
+import '../style/markers.css';
 import './patrolhome.css';
 
 const LEVEL_CLASS = { 위험: 'danger', 경계: 'caution', 주의: 'warning', 안전: 'safe' };

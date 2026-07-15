@@ -32,6 +32,7 @@ class User(Base):
         nullable=False,
     )
     safety_center_id = Column(Integer, nullable=True)
+    local_unit_id = Column(Integer, ForeignKey("local_units.id"), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     must_change_password = Column(Boolean, default=True, nullable=False)
 

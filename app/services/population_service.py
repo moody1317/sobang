@@ -35,7 +35,7 @@ def load_sigungu_codes() -> list[dict]:
 def upsert_population_stats(db: Session, rows: list[dict]) -> dict:
     created, updated = 0, 0
     for r in rows:
-        admm_cd = r.get("stdgCd")
+        admm_cd = r.get("admmCd")
         stats_ym = r.get("statsYm")
         if not admm_cd or not stats_ym:
             continue
@@ -53,7 +53,7 @@ def upsert_population_stats(db: Session, rows: list[dict]) -> dict:
             admin_code=admm_cd,
             sido_nm=r.get("ctpvNm"),
             sigungu_nm=r.get("sggNm"),
-            hjd_nm=r.get("stdgNm"),
+            hjd_nm=r.get("dongNm"),
             std_ym=stats_ym,
             total_ppltn=int(r.get("totNmprCnt") or 0),
             male_ppltn=int(r.get("maleNmprCnt") or 0),

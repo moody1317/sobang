@@ -1,0 +1,37 @@
+diff --git a/app/models/__init__.py b/app/models/__init__.py
+index 927ecb2..d3cab8b 100644
+--- a/app/models/__init__.py
++++ b/app/models/__init__.py
+@@ -18,4 +18,5 @@ import app.models.ems_incident
+ import app.models.inspection
+ import app.models.work_schedule
+ import app.models.mountain_accident
+-import app.models.rescue_accident
+\ No newline at end of file
++import app.models.rescue_accident
++import app.models.admin_dong
+\ No newline at end of file
+diff --git a/app/models/admin_dong.py b/app/models/admin_dong.py
+new file mode 100644
+index 0000000..1b36add
+--- /dev/null
++++ b/app/models/admin_dong.py
+@@ -0,0 +1,18 @@
++# app/models/admin_dong.py
++from sqlalchemy import Column, Integer, String, ForeignKey, JSON, Numeric
++from app.core.database import Base
++
++
++class AdminDong(Base):
++    __tablename__ = "admin_dongs"
++
++    id = Column(Integer, primary_key=True)
++    admin_code = Column(String(20), unique=True, nullable=False)   # 행정동코드 — KIKcd_H/admmCd/adm_cd2 공통 코드
++    dong_name = Column(String(50), nullable=False)
++    sigungu_nm = Column(String(50))
++    sido_nm = Column(String(50))
++
++    geometry = Column(JSON, nullable=True)   # GeoJSON 미매칭 동은 NULL로 남김
++
++    safety_center_id = Column(Integer, ForeignKey("safety_centers_v2.id"), nullable=True)
++    risk_score = Column(Numeric(5, 2), nullable=True)

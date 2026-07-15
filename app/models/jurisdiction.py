@@ -12,6 +12,7 @@ class Jurisdiction(Base):
 
     station_id = Column(Integer, ForeignKey("stations.id"), nullable=True)
     safety_center_id = Column(Integer, ForeignKey("safety_centers_v2.id"), nullable=True)
+    local_unit_id = Column(Integer, ForeignKey("local_units.id"), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)   # 추가: 폐지/매칭불가 표시
 
     geometry = Column(JSON, nullable=False)

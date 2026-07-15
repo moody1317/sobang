@@ -7,7 +7,7 @@ from app.models.notification import Notification
 from app.models.user import User, UnitType
 from app.models.jurisdiction import Jurisdiction
 from app.models.safety_center import SafetyCenter
-from app.services.jurisdiction_population_service import get_jurisdiction_sigungu, extract_city_name
+from app.services.jurisdiction_population_service import get_jurisdiction_sigungu, extract_city_name, get_my_sigungu_set
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -95,3 +95,11 @@ def mark_as_read(notification_id: int, db: Session = Depends(get_db_session)):
     notif.is_read = True
     db.commit()
     return {"success": True}
+
+def get_notification_filter(db: Session, current_user: User):
+    my_sigungu = get_my_sigungu_set(db, current_user)
+    return or_(
+        Notification.station_id == current_user.station_id,
+        Notification.title == "관할 전역",
+        Notification.title.in_(my_sigungu) if my_sigungu else False,
+    )

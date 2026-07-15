@@ -13,6 +13,7 @@ import app.models.safety_center
 import app.api.v1.incident as incidents
 import app.models.incident
 import app.models.notification
+import app.api.v1.navigation as navigation
 
 from app.api.v1 import notifications
 
@@ -55,3 +56,4 @@ app.include_router(inspection.router, prefix="/api/v1")
 app.include_router(jurisdiction.router, prefix="/api/v1")
 app.include_router(work_schedule.router, prefix="/api/v1")
 app.include_router(statistics.router, prefix="/api/v1")
+app.include_router(navigation.router, prefix="/api/v1")

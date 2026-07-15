@@ -19,3 +19,5 @@ import app.models.inspection
 import app.models.work_schedule
 import app.models.mountain_accident
 import app.models.rescue_accident
+import app.models.admin_dong_population
+import app.models.jurisdiction_dong

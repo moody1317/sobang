@@ -10,7 +10,8 @@ from app.models.station import Station
 from app.models.safety_center import SafetyCenter
 from app.models.population_stat import PopulationStat
 from app.services.jurisdiction_service import normalize_name
-
+from app.models.user import User, UnitType
+from app.models.local_unit import LocalUnit
 import re
 
 DONG_TO_SIGUNGU_PATH = Path(__file__).resolve().parent.parent / "data" / "dong_to_sigungu.json"
@@ -150,3 +151,47 @@ def extract_city_name(sigungu_full: str) -> str:
     if " " in sigungu_full:
         return sigungu_full.split(" ")[0]
     return sigungu_full
+
+def get_my_jurisdictions(db: Session, current_user: User) -> list[Jurisdiction]:
+    """로그인 사용자 소속의 관할구역 목록 (안전센터/지역대 본인 소속만, 본서는 산하 전체)"""
+    if current_user.unit_type == UnitType.SAFETY_CENTER and current_user.safety_center_id:
+        return db.query(Jurisdiction).filter(
+            Jurisdiction.safety_center_id == current_user.safety_center_id,
+            Jurisdiction.is_active == True,
+        ).all()
+
+    if current_user.unit_type == UnitType.LOCAL_UNIT and current_user.local_unit_id:
+        return db.query(Jurisdiction).filter(
+            Jurisdiction.local_unit_id == current_user.local_unit_id,
+            Jurisdiction.is_active == True,
+        ).all()
+
+    center_ids = [
+        c.id for c in db.query(SafetyCenter)
+        .filter(SafetyCenter.parent_station_id == current_user.station_id)
+        .all()
+    ]
+    unit_ids = [
+        u.id for u in db.query(LocalUnit)
+        .filter(LocalUnit.parent_station_id == current_user.station_id)
+        .all()
+    ]
+
+    conditions = []
+    if center_ids:
+        conditions.append(Jurisdiction.safety_center_id.in_(center_ids))
+    if unit_ids:
+        conditions.append(Jurisdiction.local_unit_id.in_(unit_ids))
+    if not conditions:
+        return []
+
+    return db.query(Jurisdiction).filter(
+        or_(*conditions),
+        Jurisdiction.is_active == True,
+    ).all()
+
+def get_my_sigungu_set(db: Session, current_user: User) -> set:
+    jurisdictions = get_my_jurisdictions(db, current_user)
+    sigungu_set = {get_jurisdiction_sigungu(db, j) for j in jurisdictions}
+    sigungu_set.discard(None)
+    return sigungu_set

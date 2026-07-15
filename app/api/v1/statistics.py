@@ -14,20 +14,14 @@ from app.models.ems_incident import EmsIncident
 from app.models.mountain_accident import MountainAccident
 from app.models.rescue_accident import RescueAccident
 from app.services.emergency_info_service import get_ems_hourly_buckets
-from app.services.jurisdiction_population_service import get_jurisdiction_sigungu
+from app.services.jurisdiction_population_service import get_jurisdiction_sigungu, get_my_jurisdictions
 
 router = APIRouter(prefix="/statistics", tags=["statistics"])
 
 
 def get_my_safety_center_ids(db: Session, current_user: User) -> list[int]:
-    """로그인 사용자 소속의 안전센터 id 목록 (본서 소속이면 산하 전체)"""
-    if current_user.unit_type == UnitType.SAFETY_CENTER and current_user.safety_center_id:
-        return [current_user.safety_center_id]
-    return [
-        c.id for c in db.query(SafetyCenter)
-        .filter(SafetyCenter.parent_station_id == current_user.station_id)
-        .all()
-    ]
+    jurisdictions = get_my_jurisdictions(db, current_user)
+    return list({j.safety_center_id for j in jurisdictions if j.safety_center_id})
 
 
 def get_my_sigungu_set(db: Session, current_user: User) -> set:

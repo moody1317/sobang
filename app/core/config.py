@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     EMERGENCY_INFO_API_KEY: str
     EMERGENCY_INFO_API_BASE_URL: str = "http://apis.data.go.kr/1661000/EmergencyInformationService/getEmgPatientTransferInfo"
 
+    ADMIN_DONG_POPULATION_API_KEY: str  
+    ADMIN_DONG_POPULATION_API_BASE_URL: str = "	https://apis.data.go.kr/1741000/admmSexdAgePpltn/selectAdmmSexdAgePpltn"
+
+    KAKAO_REST_API_KEY: str 
+
     @property
     def DATABASE_URL(self) -> str:
         return (

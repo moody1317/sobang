@@ -16,9 +16,9 @@ const STEPS = [
 ];
 
 const GRADES = [
-  { label: '안전', color: 'var(--color-risk-safe)',    range: '0 – 39' },
-  { label: '주의', color: 'var(--color-risk-warning)', range: '40 – 59' },
-  { label: '경계', color: 'var(--color-risk-caution)', range: '60 – 79' },
+  { label: '안전', color: 'var(--color-risk-safe)',    range: '0 – 19' },
+  { label: '주의', color: 'var(--color-risk-warning)', range: '20 – 49' },
+  { label: '경계', color: 'var(--color-risk-caution)', range: '50 – 79' },
   { label: '위험', color: 'var(--color-risk-danger)',  range: '80 – 100' },
 ];
 

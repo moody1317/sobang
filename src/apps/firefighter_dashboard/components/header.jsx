@@ -45,15 +45,6 @@ function Header() {
       </div>
 
       <div className="header-right">
-        <div className="header-search">
-          <i className="bi bi-search header-search-icon" />
-          <input
-            type="text"
-            className="header-search-input"
-            placeholder="구역·건물·주소 검색"
-          />
-        </div>
-
         <NavLink to="/dashboard/alerts" className="header-icon-btn header-bell-wrap" aria-label="알림">
           <i className="bi bi-bell" />
           {unreadCount > 0 && <span className="header-bell-dot" />}

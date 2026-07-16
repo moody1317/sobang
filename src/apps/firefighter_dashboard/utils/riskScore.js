@@ -16,8 +16,8 @@ export const BREAKDOWN_LABELS = {
 };
 
 export function resolveLevel(score) {
-  if (score >= 60) return 'danger';
-  if (score >= 40) return 'caution';
+  if (score >= 80) return 'danger';
+  if (score >= 50) return 'caution';
   if (score >= 20) return 'warning';
   return 'safe';
 }

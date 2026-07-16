@@ -4,7 +4,7 @@ import DashboardLayout from '../layouts/dashboardlayout';
 import InspectionAddModal from './inspectionAdd';
 import { loadKakaoMap } from '../../firefighter_patrol/utils/loadKakaoMap';
 import { getRiskMapDongs } from '../../../api/riskMap';
-import { LEVEL_CLASS, LEVEL_BY_KEY, BREAKDOWN_LABELS, buildLevelResolver } from '../utils/riskScore';
+import { LEVEL_CLASS, LEVEL_BY_KEY, BREAKDOWN_LABELS, resolveLevel } from '../utils/riskScore';
 import './danger.css';
 
 const ACCIDENT_TYPES = ['전체', '화재', '구급'];
@@ -14,7 +14,7 @@ function dongToRegion(dong, levelKey, rank, total) {
   return {
     admin_code: dong.admin_code,
     name: dong.dong_nm,
-    type: '동',
+    type: '',
     level: LEVEL_BY_KEY[levelKey] ?? '안전',
     score: Math.round(Number(dong.risk_score) * 10) / 10,
     rank,
@@ -112,11 +112,6 @@ function DangerMap() {
       cancelled = true;
     };
   }, []);
-
-  const resolveLevel = useMemo(
-    () => buildLevelResolver(dongs.map((d) => Number(d.risk_score))),
-    [dongs]
-  );
 
   const rankedByScore = useMemo(
     () => [...dongs].sort((a, b) => b.risk_score - a.risk_score),

@@ -72,8 +72,7 @@ function SchedulePage() {
   const summary = useMemo(() => {
     const c = { 주간: 0, 야간: 0, 비번: 0, patrol: 0, training: 0, records: 0 };
     for (let d = 1; d <= daysInMonth; d++) {
-      const v = schedule[dateKey(viewYear, viewMonth, d)];
-      if (!v) continue;
+      const v = schedule[dateKey(viewYear, viewMonth, d)] ?? DEFAULT_DAY;
       if (v.workType === '주간') c.주간++;
       else if (v.workType === '야간') c.야간++;
       else c.비번++;

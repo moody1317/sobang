@@ -4,7 +4,7 @@ import DashboardLayout from '../layouts/dashboardlayout';
 import { useUser } from '../contexts/usercontext';
 import { getRiskMapDongs } from '../../../api/riskMap';
 import { getMySchedule } from '../../../api/schedule';
-import { LEVEL_CLASS, LEVEL_BY_KEY, buildLevelResolver, topBreakdownLabel } from '../utils/riskScore';
+import { LEVEL_CLASS, LEVEL_BY_KEY, resolveLevel, topBreakdownLabel } from '../utils/riskScore';
 import './briefing.css';
 
 function formatDate() {
@@ -71,11 +71,6 @@ function Briefing() {
       cancelled = true;
     };
   }, []);
-
-  const resolveLevel = useMemo(
-    () => buildLevelResolver(dongs.map((d) => Number(d.risk_score))),
-    [dongs]
-  );
 
   const rankedByScore = useMemo(
     () => [...dongs].sort((a, b) => b.risk_score - a.risk_score),

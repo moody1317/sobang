@@ -1,97 +1,157 @@
+import { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../layouts/dashboardlayout';
+import { getStatisticsOverview } from '../../../api/statistics';
 import './stats.css';
 
-const MONTHLY_DATA = [
-  { month: '1월',  count: 448 },
-  { month: '2월',  count: 402 },
-  { month: '3월',  count: 386 },
-  { month: '4월',  count: 418 },
-  { month: '5월',  count: 344 },
-  { month: '6월',  count: 330 },
-  { month: '7월',  count: 372 },
-  { month: '8월',  count: 388 },
-  { month: '9월',  count: 340 },
-  { month: '10월', count: 356 },
-  { month: '11월', count: 392 },
-  { month: '12월', count: 447 },
-];
+const TYPE_COLOR = {
+  화재: 'var(--color-risk-danger)',
+  구급: 'var(--color-blue)',
+  산악: 'var(--color-risk-safe)',
+};
 
-const TYPE_DATA = [
-  { label: '화재', count: 982,  pct: 21, color: 'var(--color-risk-danger)' },
-  { label: '구급', count: 2772, pct: 60, color: 'var(--color-blue)' },
-  { label: '산악', count: 196,  pct: 4,  color: 'var(--color-risk-safe)' },
-];
+const TIME_SUB = { 심야: '00-06', 오전: '06-12', 오후: '12-18', 저녁: '18-24' };
 
-const TIME_DATA = [
-  { label: '심야', sub: '00-06', pct: 18 },
-  { label: '오전', sub: '06-12', pct: 24 },
-  { label: '오후', sub: '12-18', pct: 29 },
-  { label: '저녁', sub: '18-24', pct: 29 },
-];
+function formatMonthLabel(yyyymm) {
+  if (!yyyymm || yyyymm.length !== 6) return yyyymm;
+  return `${Number(yyyymm.slice(4, 6))}월`;
+}
 
-const SUMMARY = [
-  {
-    label: '누적 출동 (최근 1년)',
-    render: () => (
-      <><span className="stats-kpi-num">4,625</span><span className="stats-kpi-unit">건</span></>
-    ),
-  },
-  {
-    label: '평균 위험 스코어',
-    render: () => (
-      <><span className="stats-kpi-num">64</span><span className="stats-kpi-unit">/100</span></>
-    ),
-  },
-  {
-    label: '위험 등급 구역',
-    render: () => (
-      <><span className="stats-kpi-num stats-kpi-num--danger">3</span><span className="stats-kpi-unit">/15곳</span></>
-    ),
-  },
-  {
-    label: '최다 출동 유형',
-    render: () => (
-      <><span className="stats-kpi-num">구급</span><span className="stats-kpi-unit">64%</span></>
-    ),
-  },
-];
+function formatPct(ratio) {
+  return Math.round((ratio ?? 0) * 100);
+}
 
 function Stats() {
-  const maxMonthly = Math.max(...MONTHLY_DATA.map((d) => d.count));
-  const maxTimePct = Math.max(...TIME_DATA.map((d) => d.pct));
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [data, setData] = useState(null);
+  const [status, setStatus] = useState('loading'); // loading | ready | error
+
+  useEffect(() => {
+    let cancelled = false;
+    setStatus('loading');
+
+    getStatisticsOverview(year)
+      .then((result) => {
+        if (cancelled) return;
+        setData(result);
+        setStatus('ready');
+      })
+      .catch(() => {
+        if (!cancelled) setStatus('error');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [year]);
+
+  const maxMonthly = useMemo(() => {
+    if (!data?.monthly_trend?.length) return 1;
+    return Math.max(...data.monthly_trend.map((d) => d.count));
+  }, [data]);
+
+  const maxTimePct = useMemo(() => {
+    if (!data?.hourly_distribution?.length) return 1;
+    return Math.max(...data.hourly_distribution.map((d) => formatPct(d.ratio)), 1);
+  }, [data]);
+
+  const isLoading = status === 'loading';
 
   return (
     <DashboardLayout>
       <div className="stats">
+        <div className="stats-year-row">
+          <button className="stats-year-btn" onClick={() => setYear((y) => y - 1)}>
+            <i className="bi bi-chevron-left" />
+          </button>
+          <span className="stats-year-label">{year}년</span>
+          <button
+            className="stats-year-btn"
+            onClick={() => setYear((y) => y + 1)}
+            disabled={year >= new Date().getFullYear()}
+          >
+            <i className="bi bi-chevron-right" />
+          </button>
+          {data?.is_fallback_year && (
+            <span className="stats-year-fallback-note">
+              {year}년 데이터가 아직 없어 {data.year}년 데이터를 표시하고 있습니다
+            </span>
+          )}
+        </div>
+
+        {status === 'error' && <p className="stats-empty">통계를 불러오지 못했습니다</p>}
 
         <div className="stats-kpi-grid">
-          {SUMMARY.map((s) => (
-            <div key={s.label} className="stats-kpi-card">
-              <span className="stats-kpi-label">{s.label}</span>
-              <div className="stats-kpi-value">{s.render()}</div>
+          <div className="stats-kpi-card">
+            <span className="stats-kpi-label">누적 출동</span>
+            <div className="stats-kpi-value">
+              <span className="stats-kpi-num">{isLoading ? '—' : data?.total_dispatches ?? 0}</span>
+              <span className="stats-kpi-unit">건</span>
             </div>
-          ))}
+          </div>
+
+          <div className="stats-kpi-card">
+            <span className="stats-kpi-label">평균 위험 스코어</span>
+            <div className="stats-kpi-value">
+              {data?.avg_risk_score != null ? (
+                <>
+                  <span className="stats-kpi-num">{data.avg_risk_score}</span>
+                  <span className="stats-kpi-unit">/100</span>
+                </>
+              ) : (
+                <span className="stats-kpi-num stats-kpi-num--muted">{isLoading ? '—' : '데이터 없음'}</span>
+              )}
+            </div>
+          </div>
+
+          <div className="stats-kpi-card">
+            <span className="stats-kpi-label">위험 등급 구역</span>
+            <div className="stats-kpi-value">
+              {data?.high_risk_dong_count != null ? (
+                <>
+                  <span className="stats-kpi-num stats-kpi-num--danger">{data.high_risk_dong_count}</span>
+                  <span className="stats-kpi-unit">/{data.total_dong_count}곳</span>
+                </>
+              ) : (
+                <span className="stats-kpi-num stats-kpi-num--muted">{isLoading ? '—' : '데이터 없음'}</span>
+              )}
+            </div>
+          </div>
+
+          <div className="stats-kpi-card">
+            <span className="stats-kpi-label">최다 출동 유형</span>
+            <div className="stats-kpi-value">
+              {data?.most_frequent_type ? (
+                <>
+                  <span className="stats-kpi-num">{data.most_frequent_type.type}</span>
+                  <span className="stats-kpi-unit">{formatPct(data.most_frequent_type.ratio)}%</span>
+                </>
+              ) : (
+                <span className="stats-kpi-num stats-kpi-num--muted">{isLoading ? '—' : '데이터 없음'}</span>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="stats-card">
           <div className="stats-card-header">
             <span className="stats-card-title">월별 출동 추이</span>
-            <span className="stats-card-sub">겨울철·봄철 건조기에 출동이 집중됩니다</span>
+            <span className="stats-card-sub">데이터가 집계된 달만 표시됩니다</span>
           </div>
-          <div className="stats-month-chart">
-            {MONTHLY_DATA.map(({ month, count }) => (
-              <div key={month} className="stats-month-col">
-                <span className="stats-month-count">{count}</span>
-                <div className="stats-month-bar-track">
-                  <div
-                    className="stats-month-bar"
-                    style={{ height: `${(count / maxMonthly) * 100}%` }}
-                  />
+          {data?.monthly_trend?.length ? (
+            <div className="stats-month-chart">
+              {data.monthly_trend.map(({ month, count }) => (
+                <div key={month} className="stats-month-col">
+                  <span className="stats-month-count">{count}</span>
+                  <div className="stats-month-bar-track">
+                    <div className="stats-month-bar" style={{ height: `${(count / maxMonthly) * 100}%` }} />
+                  </div>
+                  <span className="stats-month-label">{formatMonthLabel(month)}</span>
                 </div>
-                <span className="stats-month-label">{month}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="stats-empty">{isLoading ? '불러오는 중입니다' : '표시할 월별 데이터가 없습니다'}</p>
+          )}
         </div>
 
         <div className="stats-bottom-grid">
@@ -99,44 +159,56 @@ function Stats() {
             <div className="stats-card-header">
               <span className="stats-card-title">사고 유형별 출동 구성</span>
             </div>
-            <div className="stats-type-list">
-              {TYPE_DATA.map(({ label, count, pct, color }) => (
-                <div key={label} className="stats-type-row">
-                  <div className="stats-type-meta">
-                    <span className="stats-type-dot" style={{ background: color }} />
-                    <span className="stats-type-label">{label}</span>
-                    <span className="stats-type-stat">{count.toLocaleString()}건 · {pct}%</span>
+            {data?.type_breakdown?.length ? (
+              <div className="stats-type-list">
+                {data.type_breakdown.map(({ type, count, ratio }) => (
+                  <div key={type} className="stats-type-row">
+                    <div className="stats-type-meta">
+                      <span className="stats-type-dot" style={{ background: TYPE_COLOR[type] }} />
+                      <span className="stats-type-label">{type}</span>
+                      <span className="stats-type-stat">{count.toLocaleString()}건 · {formatPct(ratio)}%</span>
+                    </div>
+                    <div className="stats-type-bar-track">
+                      <div
+                        className="stats-type-bar"
+                        style={{ width: `${formatPct(ratio)}%`, background: TYPE_COLOR[type] }}
+                      />
+                    </div>
+                    {data.type_breakdown_notes?.[type] && (
+                      <span className="stats-type-note">{data.type_breakdown_notes[type]}</span>
+                    )}
                   </div>
-                  <div className="stats-type-bar-track">
-                    <div className="stats-type-bar" style={{ width: `${pct}%`, background: color }} />
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="stats-empty">{isLoading ? '불러오는 중입니다' : '표시할 데이터가 없습니다'}</p>
+            )}
           </div>
 
           <div className="stats-card">
             <div className="stats-card-header">
               <span className="stats-card-title">시간대별 출동 분포</span>
-              <span className="stats-card-sub">저녁·심야 시간대 대응 부담이 큽니다</span>
             </div>
-            <div className="stats-time-chart">
-              {TIME_DATA.map(({ label, sub, pct }) => (
-                <div key={label} className="stats-time-col">
-                  <span className="stats-time-pct">{pct}%</span>
-                  <div className="stats-time-bar-track">
-                    <div
-                      className="stats-time-bar"
-                      style={{ height: `${(pct / maxTimePct) * 100}%` }}
-                    />
+            {data?.hourly_distribution?.length ? (
+              <div className="stats-time-chart">
+                {data.hourly_distribution.map(({ slot, ratio }) => (
+                  <div key={slot} className="stats-time-col">
+                    <span className="stats-time-pct">{formatPct(ratio)}%</span>
+                    <div className="stats-time-bar-track">
+                      <div
+                        className="stats-time-bar"
+                        style={{ height: `${(formatPct(ratio) / maxTimePct) * 100}%` }}
+                      />
+                    </div>
+                    <span className="stats-time-label">{slot}</span>
+                    <span className="stats-time-sub">{TIME_SUB[slot]}</span>
                   </div>
-                  <span className="stats-time-label">{label}</span>
-                  <span className="stats-time-sub">{sub}</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="stats-empty">{isLoading ? '불러오는 중입니다' : '표시할 데이터가 없습니다'}</p>
+            )}
           </div>
-
         </div>
       </div>
     </DashboardLayout>

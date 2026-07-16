@@ -15,19 +15,11 @@ export const BREAKDOWN_LABELS = {
   elderly_bonus: '고령인구가산',
 };
 
-export function buildLevelResolver(scores) {
-  const sorted = [...scores].sort((a, b) => a - b);
-  const quantile = (p) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))];
-  const q25 = quantile(0.25);
-  const q50 = quantile(0.5);
-  const q75 = quantile(0.75);
-
-  return (score) => {
-    if (score >= q75) return 'danger';
-    if (score >= q50) return 'caution';
-    if (score >= q25) return 'warning';
-    return 'safe';
-  };
+export function resolveLevel(score) {
+  if (score >= 60) return 'danger';
+  if (score >= 40) return 'caution';
+  if (score >= 20) return 'warning';
+  return 'safe';
 }
 
 export function topBreakdownLabel(breakdown) {

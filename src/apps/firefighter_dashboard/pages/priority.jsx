@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../layouts/dashboardlayout';
 import { getRiskMapDongs } from '../../../api/riskMap';
-import { LEVEL_CLASS, LEVEL_BY_KEY, buildLevelResolver, topBreakdownLabel } from '../utils/riskScore';
+import { LEVEL_CLASS, LEVEL_BY_KEY, resolveLevel, topBreakdownLabel } from '../utils/riskScore';
 import './priority.css';
 
 function inferType(dongNm) {
@@ -34,11 +34,6 @@ function PriorityList() {
       cancelled = true;
     };
   }, []);
-
-  const resolveLevel = useMemo(
-    () => buildLevelResolver(dongs.map((d) => Number(d.risk_score))),
-    [dongs]
-  );
 
   const rankedRegions = useMemo(() => {
     return [...dongs]

@@ -1,76 +1,37 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import DashboardLayout from '../layouts/dashboardlayout';
 import InspectionAddModal from './inspectionAdd';
+import { loadKakaoMap } from '../../firefighter_patrol/utils/loadKakaoMap';
+import { getRiskMapDongs } from '../../../api/riskMap';
+import { LEVEL_CLASS, LEVEL_BY_KEY, BREAKDOWN_LABELS, buildLevelResolver } from '../utils/riskScore';
 import './danger.css';
 
 const ACCIDENT_TYPES = ['전체', '화재', '구급'];
 const PERIODS = ['최근 1년', '최근 3년', '전체'];
-const LEVEL_CLASS = { 위험: 'danger', 경계: 'caution', 주의: 'warning', 안전: 'safe' };
 
-const MOCK_REGION = {
-  name: '중앙동',
-  type: '동',
-  level: '위험',
-  score: 88,
-  rank: 1,
-  total: 15,
-  dispatch: 524,
-  mainType: '구급',
-  nightRatio: 18,
-  types: [
-    { label: '화재', count: 96,  pct: 18, color: 'var(--color-risk-danger)' },
-    { label: '구급', count: 360, pct: 69, color: 'var(--color-blue)' },
-    { label: '산악', count: 68,  pct: 13, color: 'var(--color-risk-safe)' },
-  ],
-  timeSlots: [
-    { label: '심야', count: 94 },
-    { label: '오전', count: 126 },
-    { label: '오후', count: 147 },
-    { label: '저녁', count: 157 },
-  ],
-};
-
-function DonutChart({ types, total }) {
-  const r = 52;
-  const cx = 70;
-  const cy = 70;
-  const circ = 2 * Math.PI * r;
-  const strokeWidth = 14;
-  let cumulative = 0;
-
-  return (
-    <div className="danger-donut-wrap">
-      <svg width={140} height={140} viewBox="0 0 140 140">
-        {types.map((t, i) => {
-          const dashLen = (t.pct / 100) * circ;
-          const rotation = -90 + (cumulative / 100) * 360;
-          cumulative += t.pct;
-          return (
-            <circle
-              key={i}
-              cx={cx} cy={cy} r={r}
-              fill="none"
-              stroke={t.color}
-              strokeWidth={strokeWidth}
-              strokeDasharray={`${dashLen} ${circ - dashLen}`}
-              transform={`rotate(${rotation}, ${cx}, ${cy})`}
-            />
-          );
-        })}
-      </svg>
-      <div className="danger-donut-center">
-        <span className="danger-donut-total">{total.toLocaleString()}</span>
-        <span className="danger-donut-unit">건</span>
-      </div>
-    </div>
-  );
+function dongToRegion(dong, levelKey, rank, total) {
+  return {
+    admin_code: dong.admin_code,
+    name: dong.dong_nm,
+    type: '동',
+    level: LEVEL_BY_KEY[levelKey] ?? '안전',
+    score: Math.round(Number(dong.risk_score) * 10) / 10,
+    rank,
+    total,
+    breakdown: dong.risk_score_breakdown ?? {},
+  };
 }
 
 function RegionPanel({ region }) {
   const [showModal, setShowModal] = useState(false);
-  const maxCount = Math.max(...region.timeSlots.map((s) => s.count));
   const levelCls = LEVEL_CLASS[region.level] ?? 'safe';
+
+  const breakdownRows = useMemo(() => {
+    return Object.entries(region.breakdown)
+      .map(([key, value]) => ({ key, label: BREAKDOWN_LABELS[key] ?? key, value: Number(value) }))
+      .sort((a, b) => b.value - a.value);
+  }, [region.breakdown]);
 
   return (
     <div className="danger-panel">
@@ -93,59 +54,12 @@ function RegionPanel({ region }) {
       <div className="danger-divider" />
 
       <div className="danger-section">
-        <div className="danger-section-title">스코어 근거</div>
-        <div className="danger-basis">
-          <div className="danger-basis-item">
-            <span className="danger-basis-label">연간 출동</span>
-            <span className="danger-basis-value">{region.dispatch.toLocaleString()}</span>
-          </div>
-          <div className="danger-basis-item">
-            <span className="danger-basis-label">주요 유형</span>
-            <span className="danger-basis-value">{region.mainType}</span>
-          </div>
-          <div className="danger-basis-item">
-            <span className="danger-basis-label">야간 비중</span>
-            <span className="danger-basis-value">{region.nightRatio}%</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="danger-divider" />
-
-      <div className="danger-section">
-        <div className="danger-section-title">사고 유형 구성</div>
-        <div className="danger-composition">
-          <DonutChart types={region.types} total={region.dispatch} />
-          <div className="danger-type-legend">
-            {region.types.map((t) => (
-              <div key={t.label} className="danger-type-row">
-                <div className="danger-type-left">
-                  <span className="danger-type-dot" style={{ background: t.color }} />
-                  <span className="danger-type-label">{t.label}</span>
-                </div>
-                <span className="danger-type-count">{t.count}건</span>
-                <span className="danger-type-pct">{t.pct}%</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="danger-divider" />
-
-      <div className="danger-section">
-        <div className="danger-section-title">시간대별 출동 분포</div>
-        <div className="danger-time-chart">
-          {region.timeSlots.map((s) => (
-            <div key={s.label} className="danger-time-col">
-              <span className="danger-time-count">{s.count}</span>
-              <div className="danger-time-bar-track">
-                <div
-                  className={`danger-time-bar danger-time-bar--${levelCls}`}
-                  style={{ height: `${(s.count / maxCount) * 100}%` }}
-                />
-              </div>
-              <span className="danger-time-label">{s.label}</span>
+        <div className="danger-section-title">스코어 세부 근거</div>
+        <div className="danger-breakdown">
+          {breakdownRows.map((row) => (
+            <div key={row.key} className="danger-breakdown-row">
+              <span className="danger-breakdown-label">{row.label}</span>
+              <span className="danger-breakdown-value">{row.value}</span>
             </div>
           ))}
         </div>
@@ -164,46 +78,176 @@ function DangerMap() {
   const [accidentType, setAccidentType] = useState('전체');
   const [period, setPeriod] = useState('최근 1년');
   const { state } = useLocation();
-  const selectedRegion = state?.region ?? MOCK_REGION;
+
+  const [dongs, setDongs] = useState([]);
+  const [status, setStatus] = useState('loading'); // loading | ready | error
+  const [selectedAdminCode, setSelectedAdminCode] = useState(null);
+
+  const mapContainerRef = useRef(null);
+  const mapRef = useRef(null);
+  const polygonsByAdminCodeRef = useRef({});
+  const boundsByAdminCodeRef = useRef({});
+  const latestSelectedRef = useRef(null);
+  latestSelectedRef.current = selectedAdminCode;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getRiskMapDongs()
+      .then((data) => {
+        if (cancelled) return;
+        setDongs(data);
+        setStatus('ready');
+
+        const preselectName = state?.region?.name;
+        const preselect = data.find((d) => d.dong_nm === preselectName);
+        const highestScored = [...data].sort((a, b) => b.risk_score - a.risk_score)[0];
+        setSelectedAdminCode((preselect ?? highestScored)?.admin_code ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setStatus('error');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const resolveLevel = useMemo(
+    () => buildLevelResolver(dongs.map((d) => Number(d.risk_score))),
+    [dongs]
+  );
+
+  const rankedByScore = useMemo(
+    () => [...dongs].sort((a, b) => b.risk_score - a.risk_score),
+    [dongs]
+  );
+
+  const headerTitle = useMemo(() => {
+    const sigunguSet = new Set(dongs.map((d) => d.sigungu_nm));
+    if (sigunguSet.size === 1) return `${[...sigunguSet][0]} 위험 스코어`;
+    return '관할구역 위험 스코어';
+  }, [dongs]);
+
+  const selectedRegion = useMemo(() => {
+    if (!selectedAdminCode) return null;
+    const dong = dongs.find((d) => d.admin_code === selectedAdminCode);
+    if (!dong) return null;
+    const rank = rankedByScore.findIndex((d) => d.admin_code === selectedAdminCode) + 1;
+    return dongToRegion(dong, resolveLevel(Number(dong.risk_score)), rank, dongs.length);
+  }, [selectedAdminCode, dongs, rankedByScore, resolveLevel]);
+
+  const focusOnDong = (adminCode) => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    Object.entries(polygonsByAdminCodeRef.current).forEach(([code, polygons]) => {
+      const isSelected = code === adminCode;
+      polygons.forEach((polygon) => {
+        polygon.setOptions({
+          fillOpacity: isSelected ? 0.85 : 0.55,
+          strokeWeight: isSelected ? 2.5 : 1.2,
+        });
+      });
+    });
+
+    const dongBounds = boundsByAdminCodeRef.current[adminCode];
+    if (dongBounds) {
+      map.setBounds(dongBounds, 40);
+    }
+  };
+
+  useEffect(() => {
+    if (status !== 'ready' || dongs.length === 0 || !mapContainerRef.current) return;
+
+    let disposed = false;
+
+    loadKakaoMap().then((kakao) => {
+      if (disposed) return;
+
+      const map = new kakao.maps.Map(mapContainerRef.current, {
+        center: new kakao.maps.LatLng(36.6424, 127.489),
+        level: 6,
+      });
+      mapRef.current = map;
+
+      const style = getComputedStyle(document.documentElement);
+      const fillColorByLevel = {
+        safe: style.getPropertyValue('--color-risk-safe').trim(),
+        warning: style.getPropertyValue('--color-risk-warning').trim(),
+        caution: style.getPropertyValue('--color-risk-caution').trim(),
+        danger: style.getPropertyValue('--color-risk-danger').trim(),
+      };
+
+      const bounds = new kakao.maps.LatLngBounds();
+      polygonsByAdminCodeRef.current = {};
+      boundsByAdminCodeRef.current = {};
+
+      dongs.forEach((dong) => {
+        if (!dong.geometry?.coordinates) return;
+        const level = resolveLevel(Number(dong.risk_score));
+        const dongBounds = new kakao.maps.LatLngBounds();
+        const dongPolygons = [];
+
+        dong.geometry.coordinates.forEach((polygonCoords) => {
+          const rings = polygonCoords.map((ring) =>
+            ring.map(([lng, lat]) => {
+              const point = new kakao.maps.LatLng(lat, lng);
+              bounds.extend(point);
+              dongBounds.extend(point);
+              return point;
+            })
+          );
+
+          const polygon = new kakao.maps.Polygon({
+            map,
+            path: rings.length === 1 ? rings[0] : rings,
+            fillColor: fillColorByLevel[level],
+            fillOpacity: 0.55,
+            strokeWeight: 1.2,
+            strokeColor: '#ffffff',
+            strokeOpacity: 0.9,
+          });
+
+          kakao.maps.event.addListener(polygon, 'click', () => {
+            setSelectedAdminCode(dong.admin_code);
+          });
+
+          dongPolygons.push(polygon);
+        });
+
+        polygonsByAdminCodeRef.current[dong.admin_code] = dongPolygons;
+        boundsByAdminCodeRef.current[dong.admin_code] = dongBounds;
+      });
+
+      map.setBounds(bounds);
+
+      if (latestSelectedRef.current) {
+        focusOnDong(latestSelectedRef.current);
+      }
+    });
+
+    return () => {
+      disposed = true;
+      Object.values(polygonsByAdminCodeRef.current).forEach((polygons) =>
+        polygons.forEach((p) => p.setMap(null))
+      );
+      polygonsByAdminCodeRef.current = {};
+    };
+  }, [status, dongs, resolveLevel]);
+
+  useEffect(() => {
+    if (!selectedAdminCode) return;
+    focusOnDong(selectedAdminCode);
+  }, [selectedAdminCode]);
 
   return (
     <div className="danger">
-      <div className="danger-filter-bar">
-        <div className="danger-filter-group">
-          <span className="danger-filter-label">사고 유형</span>
-          <div className="danger-chips">
-            {ACCIDENT_TYPES.map((t) => (
-              <button
-                key={t}
-                className={`danger-chip${accidentType === t ? ' active' : ''}`}
-                onClick={() => setAccidentType(t)}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="danger-filter-group">
-          <span className="danger-filter-label">기간</span>
-          <div className="danger-chips">
-            {PERIODS.map((p) => (
-              <button
-                key={p}
-                className={`danger-chip${period === p ? ' active' : ''}`}
-                onClick={() => setPeriod(p)}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
       <div className="danger-content">
         <div className="danger-map-card">
           <div className="danger-map-header">
             <div>
-              <h3 className="danger-map-title">청주시 상당구 위험 스코어</h3>
+              <h3 className="danger-map-title">{headerTitle}</h3>
               <p className="danger-map-sub">행정구역을 클릭하면 상세 근거를 확인할 수 있습니다</p>
             </div>
             <div className="danger-legend">
@@ -216,16 +260,24 @@ function DangerMap() {
             </div>
           </div>
           <div className="danger-map-body">
-            {/* SVG 또는 지도 API가 들어올 영역 */}
-            <div className="danger-map-placeholder">
-              <i className="bi bi-map" />
-              <span>지도 영역</span>
-              <span className="danger-map-placeholder-sub">SVG 또는 지도 API 연동 예정</span>
-            </div>
+            {status === 'error' && (
+              <div className="danger-map-placeholder">
+                <i className="bi bi-exclamation-triangle" />
+                <span>지도를 불러오지 못했습니다</span>
+                <span className="danger-map-placeholder-sub">잠시 후 다시 시도해주세요</span>
+              </div>
+            )}
+            {status === 'loading' && (
+              <div className="danger-map-placeholder">
+                <i className="bi bi-map" />
+                <span>위험 스코어 지도를 불러오는 중</span>
+              </div>
+            )}
+            <div ref={mapContainerRef} className="danger-map-kakao" style={{ display: status === 'ready' ? 'block' : 'none' }} />
           </div>
         </div>
 
-        <RegionPanel region={selectedRegion} />
+        {selectedRegion && <RegionPanel region={selectedRegion} />}
       </div>
     </div>
   );

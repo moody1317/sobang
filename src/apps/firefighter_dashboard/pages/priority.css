@@ -39,9 +39,9 @@
 .priority-head,
 .priority-row {
   display: grid;
-  grid-template-columns: 64px 1.3fr 1.8fr 1.0fr 0.9fr 0.9fr 96px;
+  grid-template-columns: 64px 1.3fr 1.5fr 1.4fr 96px;
   align-items: center;
-  gap: 8px;
+  gap: 24px;
   padding: 0 24px;
 }
 
@@ -79,10 +79,8 @@
 }
 
 .priority-col--type {
-    margin-left: 50px;
+    text-align: center;
 }
-.priority-col--dispatch,
-.priority-col--night  { text-align: right; }
 .priority-col--action { display: flex; justify-content: flex-end; }
 
 .priority-rank {
@@ -163,21 +161,10 @@
   color: var(--color-text-secondary);
 }
 
-.priority-stat {
-  display: flex;
-  align-items: baseline;
-  gap: 2px;
-  justify-content: flex-end;
-}
-
-.priority-stat-num {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-.priority-stat-unit {
-  font-size: 12px;
+.priority-empty {
+  padding: 32px 24px;
+  text-align: center;
+  font-size: 14px;
   color: var(--color-text-muted);
 }
 

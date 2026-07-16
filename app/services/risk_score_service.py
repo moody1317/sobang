@@ -2,6 +2,7 @@
 import re
 import unicodedata
 from datetime import datetime
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from app.models.jurisdiction import Jurisdiction
@@ -14,13 +15,26 @@ from app.models.mountain_accident import MountainAccident
 from app.models.fire_target import FireTarget
 from app.models.station import Station
 from app.models.safety_center import SafetyCenter
-from app.services.jurisdiction_population_service import extract_sigungu
+from app.models.user import User
+from app.services.jurisdiction_population_service import extract_sigungu, get_my_jurisdictions
 from app.services.weather_warning_service import get_active_warnings_for_jurisdiction, get_weather_warning_weight
 from app.services.earthquake_service import get_earthquake_boost_for_jurisdiction
 
 WEATHER_STRESS_SEVERITY = {0: 0.5, 1: 1.0}  # 0=주의보, 1=경보 — 초기 경험값(위험 스코어 산식 DB 명세서 6장)
 COUNT_BASED_KEYS = ["target", "fire", "ems", "mountain", "death", "injury", "damage"]
 DONG_ALLOCATED_KEYS = ["fire", "ems", "mountain", "death", "injury", "damage"]  # target은 동 단위 직접 재집계(5.7 ②)
+
+
+# 절대 점수 기준 등급 — frontend/riskScore.js의 resolveLevel()과 반드시 동일하게 유지할 것.
+# 한쪽만 고치면 지도/목록 페이지와 통계 페이지의 등급 기준이 어긋나게 된다.
+def resolve_risk_level(score: float) -> str:
+    if score >= 60:
+        return "danger"
+    if score >= 40:
+        return "caution"
+    if score >= 20:
+        return "warning"
+    return "safe"
 
 
 def dong_key(sigungu_nm: str, dong_nm: str) -> tuple:
@@ -66,6 +80,38 @@ def _sum_by_safety_center(rows, field: str) -> dict:
             continue
         sums[r.safety_center_id] = sums.get(r.safety_center_id, 0) + float(getattr(r, field))
     return sums
+
+
+def get_my_dong_boundaries(db: Session, current_user: User) -> list[AdminDongBoundary]:
+    """로그인 사용자가 관할하는 동의 admin_dong_boundaries 목록 (geometry 있는 것만).
+    risk-map/dongs, statistics/overview 등 여러 엔드포인트가 공유하는 동 목록 조회 로직."""
+    jurisdictions = get_my_jurisdictions(db, current_user)
+    jurisdiction_ids = [j.id for j in jurisdictions]
+    if not jurisdiction_ids:
+        return []
+
+    jurisdiction_dongs = (
+        db.query(JurisdictionDong).filter(JurisdictionDong.jurisdiction_id.in_(jurisdiction_ids)).all()
+    )
+    if not jurisdiction_dongs:
+        return []
+
+    # jurisdiction_dongs는 소규모 테이블이라 여기서 SQL 조건을 만들어, admin_dong_boundaries에서
+    # 필요한 동만 가져온다 (전국 3천여 건을 전부 읽어와 Python에서 거르지 않도록).
+    match_conditions = [
+        and_(AdminDongBoundary.sigungu_nm == jd.sigungu_nm, AdminDongBoundary.dong_nm == jd.dong_nm)
+        for jd in jurisdiction_dongs
+    ]
+    candidates = (
+        db.query(AdminDongBoundary)
+        .filter(AdminDongBoundary.geometry.isnot(None), or_(*match_conditions))
+        .all()
+    )
+
+    # 마침표·"제"+숫자·유니코드 정규화 차이로 위 SQL 조건에 안 걸리는 극소수 케이스를 대비한 안전망.
+    # candidates가 이미 관할동 규모로 좁혀진 뒤라 비용이 크지 않다.
+    my_dong_keys = {dong_key(jd.sigungu_nm, jd.dong_nm) for jd in jurisdiction_dongs}
+    return [b for b in candidates if dong_key(b.sigungu_nm, b.dong_nm) in my_dong_keys]
 
 
 def get_station_mountain_accident_count(db: Session, station: Station) -> int:

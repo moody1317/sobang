@@ -1,5 +1,5 @@
 # app/api/v1/statistics.py
-from datetime import datetime, timedelta
+from datetime import datetime
 from collections import defaultdict
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -12,9 +12,9 @@ from app.models.jurisdiction import Jurisdiction
 from app.models.fire_incident import FireIncident
 from app.models.ems_incident import EmsIncident
 from app.models.mountain_accident import MountainAccident
-from app.models.rescue_accident import RescueAccident
 from app.services.emergency_info_service import get_ems_hourly_buckets
 from app.services.jurisdiction_population_service import get_jurisdiction_sigungu, get_my_jurisdictions
+from app.services.risk_score_service import get_my_dong_boundaries, resolve_risk_level
 
 router = APIRouter(prefix="/statistics", tags=["statistics"])
 
@@ -47,85 +47,56 @@ def get_my_sigungu_set(db: Session, current_user: User) -> set:
     return sigungu_set
 
 
-@router.get("/overview")
-def get_statistics_overview(
-    db: Session = Depends(get_db_session),
-    current_user: User = Depends(get_current_active_user),
-):
-    center_ids = get_my_safety_center_ids(db, current_user)
-    sigungu_set = get_my_sigungu_set(db, current_user)
+def _build_overview_for_year(db: Session, current_user: User, center_ids: list[int], sigungu_set: set, year: int) -> dict:
+    year_start = f"{year}0101"
+    year_end = f"{year}1231235959"  # rcpt_dt는 시분초까지 포함, dclr_ymd는 앞 8자리만 비교되므로 넉넉히 잡음
 
-    if not center_ids:
-        return {
-            "total_dispatches": 0,
-            "avg_risk_score": None,
-            "high_risk_jurisdiction_count": None,
-            "most_frequent_type": None,
-            "monthly_trend": [],
-            "type_breakdown": [],
-            "type_breakdown_notes": {},
-            "hourly_distribution": [],
-        }
-
-    one_year_ago = (datetime.now() - timedelta(days=365)).strftime("%Y%m%d")
-
-    # ── 화재 / 구급 이력 (최근 1년 실측) ──────────────────────────
-    fires = db.query(FireIncident).filter(
-        FireIncident.safety_center_id.in_(center_ids),
-        FireIncident.rcpt_dt >= one_year_ago,
-    ).all()
-
-    ems = db.query(EmsIncident).filter(
-        EmsIncident.safety_center_id.in_(center_ids),
-        EmsIncident.dclr_ymd >= one_year_ago,
-    ).all()
-
-    # ── 산악 / 구조 (CSV 스냅샷, 2024년 연간 기준) ────────────────
-    mountain_accidents = []
-    rescue_accidents = []
-    if sigungu_set:
-        mountain_accidents = db.query(MountainAccident).filter(
-            MountainAccident.gu_nm.in_(sigungu_set)
+    fire_dates = [
+        r[0] for r in db.query(FireIncident.rcpt_dt).filter(
+            FireIncident.safety_center_id.in_(center_ids),
+            FireIncident.rcpt_dt >= year_start,
+            FireIncident.rcpt_dt <= year_end,
         ).all()
-        rescue_accidents = db.query(RescueAccident).filter(
-            RescueAccident.gu_nm.in_(sigungu_set)
+    ]
+
+    ems_dates = [
+        r[0] for r in db.query(EmsIncident.dclr_ymd).filter(
+            EmsIncident.safety_center_id.in_(center_ids),
+            EmsIncident.dclr_ymd >= year_start,
+            EmsIncident.dclr_ymd <= f"{year}1231",
         ).all()
+    ]
 
-    total = len(fires) + len(ems)
-    grand_total = total + len(mountain_accidents) + len(rescue_accidents)
+    mountain_count = (
+        db.query(MountainAccident).filter(MountainAccident.gu_nm.in_(sigungu_set)).count()
+        if sigungu_set else 0
+    )
 
-    # ── 월별 추이 (화재 + 구급만, 실측 기간 기준) ─────────────────
+    total = len(fire_dates) + len(ems_dates)
+    grand_total = total + mountain_count
+
     monthly = defaultdict(int)
-    for f in fires:
-        if f.rcpt_dt:
-            monthly[f.rcpt_dt[:6]] += 1
-    for e in ems:
-        if e.dclr_ymd:
-            monthly[e.dclr_ymd[:6]] += 1
+    for d in fire_dates:
+        if d:
+            monthly[d[:6]] += 1
+    for d in ems_dates:
+        if d:
+            monthly[d[:6]] += 1
     monthly_trend = [{"month": k, "count": v} for k, v in sorted(monthly.items())]
 
-    # ── 유형별 구성 ────────────────────────────────────────────
     type_breakdown = [
-        {"type": "화재", "count": len(fires), "ratio": round(len(fires) / grand_total, 4) if grand_total else 0},
-        {"type": "구급", "count": len(ems), "ratio": round(len(ems) / grand_total, 4) if grand_total else 0},
-        {"type": "구조", "count": len(rescue_accidents), "ratio": round(len(rescue_accidents) / grand_total, 4) if grand_total else 0},
-        {"type": "산악", "count": len(mountain_accidents), "ratio": round(len(mountain_accidents) / grand_total, 4) if grand_total else 0},
+        {"type": "화재", "count": len(fire_dates), "ratio": round(len(fire_dates) / grand_total, 4) if grand_total else 0},
+        {"type": "구급", "count": len(ems_dates), "ratio": round(len(ems_dates) / grand_total, 4) if grand_total else 0},
+        {"type": "산악", "count": mountain_count, "ratio": round(mountain_count / grand_total, 4) if grand_total else 0},
     ]
-    type_breakdown_notes = {
-        "화재": "최근 1년 실측",
-        "구급": "최근 1년 실측",
-        "구조": "2024년 연간 기준 (CSV 스냅샷, 최신 데이터 없음)",
-        "산악": "2024년 연간 기준 (CSV 스냅샷, 최신 데이터 없음)",
-    }
     most_frequent_type = max(type_breakdown, key=lambda x: x["count"]) if grand_total else None
 
-    # ── 시간대별 분포 — 화재(실측) + 구급(구급정보서비스 실시간 보강) ──
     hourly_buckets = {"심야": 0, "오전": 0, "오후": 0, "저녁": 0}
     fire_with_time = 0
-    for f in fires:
-        if not f.rcpt_dt or len(f.rcpt_dt) < 10:
+    for d in fire_dates:
+        if not d or len(d) < 10:
             continue
-        hour = int(f.rcpt_dt[8:10])
+        hour = int(d[8:10])
         fire_with_time += 1
         if 0 <= hour < 6:
             hourly_buckets["심야"] += 1
@@ -136,10 +107,12 @@ def get_statistics_overview(
         else:
             hourly_buckets["저녁"] += 1
 
-    station = db.query(Station).filter(Station.id == current_user.station_id).first()
     ems_hourly = {"buckets": {"심야": 0, "오전": 0, "오후": 0, "저녁": 0}, "total": 0}
-    if station:
-        ems_hourly = get_ems_hourly_buckets(station.station_name, "충청북도")
+    hourly_includes_ems = year == datetime.now().year
+    if hourly_includes_ems:
+        station = db.query(Station).filter(Station.id == current_user.station_id).first()
+        if station:
+            ems_hourly = get_ems_hourly_buckets(station.station_name, "충청북도")
 
     combined_buckets = dict(hourly_buckets)
     combined_total = fire_with_time
@@ -153,12 +126,64 @@ def get_statistics_overview(
     ]
 
     return {
+        "year": year,
         "total_dispatches": total,
-        "avg_risk_score": None,               # 위험 스코어 산식 완성 후 반영 예정
-        "high_risk_jurisdiction_count": None,  # 위험 스코어 산식 완성 후 반영 예정
         "most_frequent_type": most_frequent_type,
         "monthly_trend": monthly_trend,
         "type_breakdown": type_breakdown,
-        "type_breakdown_notes": type_breakdown_notes,
         "hourly_distribution": hourly_distribution,
+        "hourly_includes_ems": hourly_includes_ems,
     }
+
+
+def _get_dong_risk_summary(db: Session, current_user: User) -> dict:
+    dongs = get_my_dong_boundaries(db, current_user)
+    scores = [float(d.risk_score) for d in dongs if d.risk_score is not None]
+    if not scores:
+        return {"avg_risk_score": None, "high_risk_dong_count": None, "total_dong_count": len(dongs)}
+
+    avg_risk_score = round(sum(scores) / len(scores), 1)
+    high_risk_dong_count = sum(1 for s in scores if resolve_risk_level(s) == "danger")
+    return {
+        "avg_risk_score": avg_risk_score,
+        "high_risk_dong_count": high_risk_dong_count,
+        "total_dong_count": len(dongs),
+    }
+
+
+@router.get("/overview")
+def get_statistics_overview(
+    year: int | None = None,
+    db: Session = Depends(get_db_session),
+    current_user: User = Depends(get_current_active_user),
+):
+    center_ids = get_my_safety_center_ids(db, current_user)
+    sigungu_set = get_my_sigungu_set(db, current_user)
+
+    if not center_ids:
+        return {
+            "year": year or datetime.now().year,
+            "is_fallback_year": False,
+            "total_dispatches": 0,
+            "avg_risk_score": None,
+            "high_risk_dong_count": None,
+            "total_dong_count": 0,
+            "most_frequent_type": None,
+            "monthly_trend": [],
+            "type_breakdown": [],
+            "hourly_distribution": [],
+        }
+
+    requested_year = year or datetime.now().year
+    result = _build_overview_for_year(db, current_user, center_ids, sigungu_set, requested_year)
+
+    if not result["monthly_trend"] and year is None:
+        fallback_year = requested_year - 1
+        result = _build_overview_for_year(db, current_user, center_ids, sigungu_set, fallback_year)
+        result["is_fallback_year"] = True
+    else:
+        result["is_fallback_year"] = False
+
+    result.update(_get_dong_risk_summary(db, current_user))
+
+    return result

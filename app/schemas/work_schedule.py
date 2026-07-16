@@ -9,6 +9,7 @@ class WorkScheduleUpsert(BaseModel):
     end_time: Optional[time] = None
     is_patrol: bool = False
     is_education: bool = False
+    title: Optional[str] = None
 
 class WorkScheduleResponse(BaseModel):
     date: date_type
@@ -17,6 +18,7 @@ class WorkScheduleResponse(BaseModel):
     end_time: Optional[time] = None
     is_patrol: bool
     is_education: bool
+    title: Optional[str] = None
 
     class Config:
         from_attributes = True

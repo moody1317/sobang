@@ -61,6 +61,11 @@ def get_jurisdiction_sigungu(db: Session, jurisdiction: Jurisdiction) -> str:
         if station:
             return extract_sigungu(station.address, fallback_name=station.station_name)
         return ""
+    if jurisdiction.local_unit_id:
+        unit = db.query(LocalUnit).filter(LocalUnit.id == jurisdiction.local_unit_id).first()
+        if unit:
+            return extract_sigungu(unit.address, fallback_name=unit.station_name)
+        return ""
     return ""
 
 def geometry_area(geometry_json: dict) -> float:

@@ -1,9 +1,11 @@
 import requests
 from datetime import datetime, timedelta
+from shapely.geometry import shape
 from sqlalchemy.orm import Session
 from app.models.active_risk_event import ActiveRiskEvent
 from app.core.config import settings
 from app.services.notification_service import create_notification
+from app.services.incident_service import haversine_distance
 from app.models.notification import NotificationLevel
 
 DECAY_WINDOW_HOURS = 72
@@ -94,6 +96,32 @@ def is_domestic_earthquake(eqk_data: dict) -> bool:
     lat = float(eqk_data.get("lat", 0) or 0)
     lon = float(eqk_data.get("lon", 0) or 0)
     return 33.0 <= lat <= 43.0 and 124.0 <= lon <= 132.0
+
+def get_earthquake_boost_for_jurisdiction(db: Session, jurisdiction, now: datetime = None) -> float:
+    """활성 지진 이벤트들의 공간·시간 감쇄 가산점을 관할구역 centroid 기준으로 합산 (위험 스코어 지진 축용)"""
+    now = now or datetime.now()
+    if not jurisdiction.geometry:
+        return 0.0
+
+    active_events = db.query(ActiveRiskEvent).filter(
+        ActiveRiskEvent.event_type == "지진",
+        ActiveRiskEvent.expires_at > now,
+    ).all()
+    if not active_events:
+        return 0.0
+
+    centroid = shape(jurisdiction.geometry).centroid
+    total = 0.0
+    for event in active_events:
+        distance = haversine_distance(centroid.y, centroid.x, float(event.epicenter_lat), float(event.epicenter_lon))
+        radius = float(event.affected_radius_km)
+        space_decay = max(0.0, 1 - distance / radius) if radius else 0.0
+        elapsed_hours = (now - event.occurred_at).total_seconds() / 3600
+        time_decay = max(0.0, 1 - elapsed_hours / DECAY_WINDOW_HOURS)
+        total += get_base_boost(float(event.magnitude)) * space_decay * time_decay
+
+    return round(total, 2)
+
 
 def poll_recent_earthquakes(db: Session):
     today = datetime.now().strftime("%Y%m%d")

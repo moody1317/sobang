@@ -44,6 +44,7 @@ def upsert_my_schedule(
         existing.end_time = data.end_time
         existing.is_patrol = data.is_patrol
         existing.is_education = data.is_education
+        existing.title = data.title
         schedule = existing
     else:
         schedule = WorkSchedule(
@@ -54,6 +55,7 @@ def upsert_my_schedule(
             end_time=data.end_time,
             is_patrol=data.is_patrol,
             is_education=data.is_education,
+            title=data.title,
         )
         db.add(schedule)
 

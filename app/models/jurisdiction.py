@@ -1,5 +1,5 @@
 # app/models/jurisdiction.py
-from sqlalchemy import Column, Integer, String, ForeignKey, JSON, Boolean, Numeric
+from sqlalchemy import Column, Integer, String, ForeignKey, JSON, Boolean, Numeric, DateTime
 from app.core.database import Base
 
 
@@ -23,3 +23,7 @@ class Jurisdiction(Base):
     population_std_ym = Column(String(6), nullable=True)
 
     forest_fire_risk_index = Column(Numeric(6, 2), nullable=True)
+
+    risk_score = Column(Numeric(5, 2), nullable=True)
+    risk_score_breakdown = Column(JSON, nullable=True)
+    risk_score_updated_at = Column(DateTime, nullable=True)

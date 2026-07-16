@@ -1,5 +1,5 @@
 import enum
-from sqlalchemy import Column, Integer, Enum, Date, Time, Boolean, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, Enum, Date, Time, Boolean, ForeignKey, UniqueConstraint, String
 from sqlalchemy.sql import func
 from sqlalchemy import DateTime
 from app.core.database import Base
@@ -23,6 +23,7 @@ class WorkSchedule(Base):
 
     is_patrol = Column(Boolean, nullable=False, default=False)
     is_education = Column(Boolean, nullable=False, default=False)
+    title = Column(String(100), nullable=True)
 
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)

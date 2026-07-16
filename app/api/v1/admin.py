@@ -141,6 +141,7 @@ def bulk_register_education(
         ).first()
         if schedule:
             schedule.is_education = True
+            schedule.title = data.title
         else:
             db.add(WorkSchedule(
                 user_id=u.id,
@@ -148,6 +149,7 @@ def bulk_register_education(
                 shift_type=ShiftType.주간,
                 is_patrol=False,
                 is_education=True,
+                title=data.title,
             ))
 
     create_notification(

@@ -216,6 +216,20 @@
   flex-direction: column;
 }
 
+.data-source-group + .data-source-group {
+  margin-top: 8px;
+}
+
+.data-source-group-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-brand-mid);
+  letter-spacing: 0.02em;
+  margin: 0;
+  padding: 14px 0 6px;
+  border-bottom: 1px solid var(--color-border-divider);
+}
+
 .data-source-row {
   display: grid;
   grid-template-columns: 2fr 1.4fr 2.6fr;

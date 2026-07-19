@@ -7,9 +7,6 @@ import { getRiskMapDongs } from '../../../api/riskMap';
 import { LEVEL_CLASS, LEVEL_BY_KEY, BREAKDOWN_LABELS, resolveLevel } from '../utils/riskScore';
 import './danger.css';
 
-const ACCIDENT_TYPES = ['전체', '화재', '구급'];
-const PERIODS = ['최근 1년', '최근 3년', '전체'];
-
 function dongToRegion(dong, levelKey, rank, total) {
   return {
     admin_code: dong.admin_code,
@@ -75,9 +72,8 @@ function RegionPanel({ region }) {
 }
 
 function DangerMap() {
-  const [accidentType, setAccidentType] = useState('전체');
-  const [period, setPeriod] = useState('최근 1년');
   const { state } = useLocation();
+  const initialPreselectNameRef = useRef(state?.region?.name);
 
   const [dongs, setDongs] = useState([]);
   const [status, setStatus] = useState('loading'); // loading | ready | error
@@ -88,7 +84,10 @@ function DangerMap() {
   const polygonsByAdminCodeRef = useRef({});
   const boundsByAdminCodeRef = useRef({});
   const latestSelectedRef = useRef(null);
-  latestSelectedRef.current = selectedAdminCode;
+
+  useEffect(() => {
+    latestSelectedRef.current = selectedAdminCode;
+  }, [selectedAdminCode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -99,7 +98,7 @@ function DangerMap() {
         setDongs(data);
         setStatus('ready');
 
-        const preselectName = state?.region?.name;
+        const preselectName = initialPreselectNameRef.current;
         const preselect = data.find((d) => d.dong_nm === preselectName);
         const highestScored = [...data].sort((a, b) => b.risk_score - a.risk_score)[0];
         setSelectedAdminCode((preselect ?? highestScored)?.admin_code ?? null);
@@ -130,7 +129,7 @@ function DangerMap() {
     if (!dong) return null;
     const rank = rankedByScore.findIndex((d) => d.admin_code === selectedAdminCode) + 1;
     return dongToRegion(dong, resolveLevel(Number(dong.risk_score)), rank, dongs.length);
-  }, [selectedAdminCode, dongs, rankedByScore, resolveLevel]);
+  }, [selectedAdminCode, dongs, rankedByScore]);
 
   const focusOnDong = (adminCode) => {
     const map = mapRef.current;
@@ -229,7 +228,7 @@ function DangerMap() {
       );
       polygonsByAdminCodeRef.current = {};
     };
-  }, [status, dongs, resolveLevel]);
+  }, [status, dongs]);
 
   useEffect(() => {
     if (!selectedAdminCode) return;

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import DashboardLayout from '../layouts/dashboardlayout';
 import Toggle from '../components/toggle';
-import { useUser, useRefreshUser } from '../contexts/usercontext';
+import { useUser, useRefreshUser } from '../contexts/userHooks';
 import { verifyPassword, updateProfile, changePassword } from '../../../api/auth';
 import './mypage.css';
 

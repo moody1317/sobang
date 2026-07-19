@@ -1,7 +1,10 @@
 import { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PatrolLayout from '../layouts/patrollayout';
 import { loadKakaoMap } from '../utils/loadKakaoMap';
 import { RISK_ZONES } from '../data/riskZones';
+import { useUser } from '../../firefighter_dashboard/contexts/userHooks';
+import { getActiveIncidents } from '../../../api/incidents';
 import '../style/markers.css';
 import './patrolhome.css';
 
@@ -15,6 +18,8 @@ const ZONE_ICON = {
   산사태: 'bi-exclamation-octagon-fill',
 };
 
+const INCIDENT_POLL_INTERVAL_MS = 5000;
+
 function createZoneMarkerElement(zone) {
   const el = document.createElement('div');
   el.className = `patrol-marker patrol-marker--${LEVEL_CLASS[zone.level] ?? ''}`;
@@ -24,6 +29,29 @@ function createZoneMarkerElement(zone) {
 
 function PatrolHome() {
   const mapContainerRef = useRef(null);
+  const navigate = useNavigate();
+  const user = useUser();
+
+  useEffect(() => {
+    if (!user?.station_id) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const incidents = await getActiveIncidents();
+        const newIncident = incidents
+          .filter((i) => i.station_id === user.station_id && i.status === '신고접수')
+          .sort((a, b) => new Date(a.reported_at) - new Date(b.reported_at))[0];
+
+        if (newIncident) {
+          navigate('/firefighter_patrol/dispatch', { state: { incident: newIncident } });
+        }
+      } catch {
+        // 폴링 실패는 조용히 다음 주기에 재시도
+      }
+    }, INCIDENT_POLL_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [user, navigate]);
 
   useEffect(() => {
     let watchId;

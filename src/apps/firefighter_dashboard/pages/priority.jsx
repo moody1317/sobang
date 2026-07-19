@@ -50,7 +50,7 @@ function PriorityList() {
         mainFactor: topBreakdownLabel(d.risk_score_breakdown),
         breakdown: d.risk_score_breakdown ?? {},
       }));
-  }, [dongs, resolveLevel]);
+  }, [dongs]);
 
   return (
     <div className="priority">

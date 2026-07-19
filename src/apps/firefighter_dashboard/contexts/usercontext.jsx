@@ -1,10 +1,7 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import client from '../../../api/client';
 import { isLoggedIn } from '../../../api/auth';
-
-export const UserContext = createContext(null);
-export const useUser = () => useContext(UserContext)?.user ?? null;
-export const useRefreshUser = () => useContext(UserContext)?.refreshUser;
+import { UserContext } from './userContextValue';
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -20,7 +17,7 @@ export function UserProvider({ children }) {
     try {
       const response = await client.get('/auth/me');
       setUser(response.data);
-    } catch (err) {
+    } catch {
       setUser(null);
     } finally {
       setLoading(false);
@@ -28,7 +25,7 @@ export function UserProvider({ children }) {
   }
 
   useEffect(() => {
-    refreshUser();
+    Promise.resolve().then(() => refreshUser());
   }, []);
 
   return (

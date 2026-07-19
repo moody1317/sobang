@@ -13,6 +13,7 @@ export const BREAKDOWN_LABELS = {
   injury: '부상',
   damage: '재산피해',
   elderly_bonus: '고령인구가산',
+  active_incident: '진행중 신고 가산',
 };
 
 export function resolveLevel(score) {

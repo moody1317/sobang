@@ -18,8 +18,8 @@ client.interceptors.response.use(
     (response) => response,
     (error) => {
         const isLoginRequest = error.config?.url?.includes("/auth/login");
-        
-        if (error.response?.status === 401) {
+
+        if (error.response?.status === 401 && !isLoginRequest) {
             localStorage.removeItem("access_token");
             localStorage.removeItem("must_change_password");
             window.location.href = "/";

@@ -192,6 +192,9 @@
   border-radius: var(--radius-modal);
   width: 100%;
   max-width: 440px;
+  max-height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 8px 40px rgba(20, 25, 35, 0.18);
   animation: admin-modal-in 0.18s ease;
 }
@@ -206,6 +209,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  flex-shrink: 0;
   padding: 22px 24px 0;
 }
 
@@ -284,6 +288,9 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .admin-modal-two-col {
@@ -417,6 +424,15 @@
   gap: 6px;
 }
 
+.admin-chips--grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.admin-chips--grid3 .admin-chip {
+  padding: 0 8px;
+}
+
 .admin-chip {
   height: 34px;
   padding: 0 14px;
@@ -480,6 +496,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+  flex-shrink: 0;
   padding: 20px 24px 22px;
 }
 

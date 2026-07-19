@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../layouts/dashboardlayout';
-import { useAlertCount, useRefreshAlertCount } from '../contexts/alertcontext';
+import { useAlertCount, useRefreshAlertCount } from '../contexts/alertHooks';
 import { getNotifications, markNotificationRead } from '../../../api/notifications';
 import './alert.css';
 
@@ -54,7 +54,7 @@ function Alert() {
   }, []);
 
   useEffect(() => {
-    fetchAlerts(0);
+    Promise.resolve().then(() => fetchAlerts(0));
   }, [fetchAlerts]);
 
   function loadMore() {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useUser } from '../contexts/usercontext';
+import { useUser } from '../contexts/userHooks';
 import { getUsers, bulkRegisterEducation } from '../../../api/admin';
 import './inspectionAdd.css';
 

@@ -109,15 +109,8 @@
   color: var(--color-text-secondary);
 }
 
-.patrol-nav-arrived-badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: 46px;
-  border-radius: var(--radius-btn);
-  background: var(--color-success-bg);
-  color: var(--color-success-dark);
-  font-size: 14px;
-  font-weight: 700;
+.patrol-nav-btn--primary {
+  border: none;
+  background: var(--color-brand);
+  color: #fff;
 }

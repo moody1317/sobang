@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import DashboardLayout from '../layouts/dashboardlayout';
-import { useUser } from '../contexts/usercontext';
+import { useUser } from '../contexts/userHooks';
 import { getMySchedule, upsertMySchedule } from '../../../api/schedule';
+import { getMyDispatchDates } from '../../../api/incidents';
 import TrainingBulkAddModal from './trainingBulkAdd';
 import './schedule.css';
 
@@ -18,7 +19,11 @@ function dateKey(year, month, day) {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-const DEFAULT_DAY = { workType: '주간', start: '09:00', end: '18:00', patrol: false, training: false, records: 0 };
+const DEFAULT_DAY = {
+  workType: '주간', start: '09:00', end: '18:00',
+  patrol: false, education: false, title: null,
+  records: 0,
+};
 
 function toEntry(item) {
   return {
@@ -26,7 +31,8 @@ function toEntry(item) {
     start: item.start_time?.slice(0, 5) ?? DEFAULT_DAY.start,
     end: item.end_time?.slice(0, 5) ?? DEFAULT_DAY.end,
     patrol: item.is_patrol,
-    training: item.is_education,
+    education: item.is_education,
+    title: item.title,
     records: 0,
   };
 }
@@ -46,6 +52,7 @@ function SchedulePage() {
   const [viewMonth, setViewMonth] = useState(INIT_MONTH);
   const [selectedDay, setSelectedDay] = useState(INIT_DAY);
   const [schedule, setSchedule]   = useState({});
+  const [dispatchDates, setDispatchDates] = useState(new Set());
   const [showTrainingModal, setShowTrainingModal] = useState(false);
 
   const fetchSchedule = useCallback(async () => {
@@ -55,9 +62,17 @@ function SchedulePage() {
     setSchedule(data);
   }, [viewYear, viewMonth]);
 
+  const fetchDispatchDates = useCallback(async () => {
+    const dates = await getMyDispatchDates(viewYear, viewMonth + 1);
+    setDispatchDates(new Set(dates));
+  }, [viewYear, viewMonth]);
+
   useEffect(() => {
-    fetchSchedule();
-  }, [fetchSchedule]);
+    Promise.resolve().then(() => {
+      fetchSchedule();
+      fetchDispatchDates();
+    });
+  }, [fetchSchedule, fetchDispatchDates]);
 
   const daysInMonth  = new Date(viewYear, viewMonth + 1, 0).getDate();
   const firstWeekday = new Date(viewYear, viewMonth, 1).getDay();
@@ -70,18 +85,18 @@ function SchedulePage() {
   const weekdayStr = WEEKDAY_NAMES[selDate.getDay()];
 
   const summary = useMemo(() => {
-    const c = { 주간: 0, 야간: 0, 비번: 0, patrol: 0, training: 0, records: 0 };
+    const c = { 주간: 0, 야간: 0, 비번: 0, patrol: 0, records: 0 };
     for (let d = 1; d <= daysInMonth; d++) {
       const v = schedule[dateKey(viewYear, viewMonth, d)] ?? DEFAULT_DAY;
       if (v.workType === '주간') c.주간++;
       else if (v.workType === '야간') c.야간++;
       else c.비번++;
-      if (v.patrol)   c.patrol++;
-      if (v.training) c.training++;
+      if (v.patrol) c.patrol++;
       c.records += v.records;
     }
+    c.dispatch = dispatchDates.size;
     return c;
-  }, [schedule, viewYear, viewMonth, daysInMonth]);
+  }, [schedule, dispatchDates, viewYear, viewMonth, daysInMonth]);
 
   function prevMonth() {
     if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
@@ -102,7 +117,8 @@ function SchedulePage() {
       start_time: next.start,
       end_time: next.end,
       is_patrol: next.patrol,
-      is_education: next.training,
+      is_education: next.education,
+      title: next.title,
     });
   }
 
@@ -130,7 +146,7 @@ function SchedulePage() {
               <span className="sch-legend-item"><span className="sch-ldot sch-ldot--purple" />야간 근무</span>
               <span className="sch-legend-item"><span className="sch-ldot sch-ldot--gray" />비번/휴무</span>
               <span className="sch-legend-item"><i className="bi bi-send sch-licon sch-licon--patrol" />순찰</span>
-              <span className="sch-legend-item"><i className="bi bi-mortarboard sch-licon sch-licon--training" />교육</span>
+              <span className="sch-legend-item"><i className="bi bi-truck sch-licon sch-licon--dispatch" />출동</span>
             </div>
           </div>
 
@@ -171,9 +187,9 @@ function SchedulePage() {
                         <i className="bi bi-send sch-act-icon sch-act-icon--patrol" />
                       </span>
                     )}
-                    {d.training && (
+                    {dispatchDates.has(k) && (
                       <span className="sch-act-row">
-                        <i className="bi bi-mortarboard sch-act-icon sch-act-icon--training" />
+                        <i className="bi bi-truck sch-act-icon sch-act-icon--dispatch" />
                       </span>
                     )}
                   </div>
@@ -245,13 +261,10 @@ function SchedulePage() {
                     <i className="bi bi-send sch-act-btn-icon sch-act-btn-icon--patrol" />
                     순찰
                   </button>
-                  <button
-                    className={`sch-act-btn${dayData.training ? ' active' : ''}`}
-                    onClick={() => updateDay({ training: !dayData.training })}
-                  >
-                    <i className="bi bi-mortarboard sch-act-btn-icon sch-act-btn-icon--training" />
-                    교육
-                  </button>
+                  <div className={`sch-act-btn sch-act-btn--readonly${dispatchDates.has(selKey) ? ' active' : ''}`}>
+                    <i className="bi bi-truck sch-act-btn-icon sch-act-btn-icon--dispatch" />
+                    출동
+                  </div>
                 </div>
               </div>
             )}
@@ -287,8 +300,8 @@ function SchedulePage() {
                 <span className="sch-summary-val">{summary.patrol}일</span>
               </div>
               <div className="sch-summary-row">
-                <span className="sch-summary-left"><i className="bi bi-mortarboard sch-licon sch-licon--training" />교육 활동</span>
-                <span className="sch-summary-val">{summary.training}일</span>
+                <span className="sch-summary-left"><i className="bi bi-truck sch-licon sch-licon--dispatch" />출동 활동</span>
+                <span className="sch-summary-val">{summary.dispatch}일</span>
               </div>
             </div>
             <div className="sch-summary-div" />

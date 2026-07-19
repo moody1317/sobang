@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { logout } from '../../../api/auth';
-import { useUser } from '../contexts/usercontext';
-import { useAlertCount } from '../contexts/alertcontext';
+import { useUser } from '../contexts/userHooks';
+import { useAlertCount } from '../contexts/alertHooks';
 import './sidebar.css';
 
 const NAV_SECTIONS = [

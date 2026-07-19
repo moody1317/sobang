@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PatrolLayout from '../layouts/patrollayout';
 import { login, getMustChangePassword } from '../../../api/auth';
-import { useRefreshUser } from '../../firefighter_dashboard/contexts/usercontext';
+import { useRefreshUser } from '../../firefighter_dashboard/contexts/userHooks';
 import './login.css';
 
 function PatrolLogin() {

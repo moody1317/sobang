@@ -1,6 +1,6 @@
 import { useLocation, NavLink } from 'react-router-dom';
-import { useUser } from '../contexts/usercontext';
-import { useAlertCount } from '../contexts/alertcontext';
+import { useUser } from '../contexts/userHooks';
+import { useAlertCount } from '../contexts/alertHooks';
 import './header.css';
 
 const PAGE_LABELS = {

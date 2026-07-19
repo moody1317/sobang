@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useUser } from '../contexts/usercontext';
+import { useUser } from '../contexts/userHooks';
 import DashboardLayout from '../layouts/dashboardlayout';
 import client from '../../../api/client';
 import { getStationUsers, createUser, getUnits, resetUserPassword } from '../../../api/auth';
@@ -7,18 +7,20 @@ import './admin.css';
 
 const RANKS = ['소방사', '소방교', '소방장', '소방위'];
 
-const UNIT_TYPES = ['본서', '안전센터', '구급대', '항공대', '특수대응단', '지역대'];
-
+const UNIT_TYPES = ['본서', '안전센터', '구급대', '항공대', '특수대응단', '지역대', '119구조대'];
+const FACILITY_UNIT_TYPES = ['안전센터', '지역대', '119구조대'];
+const DEPARTMENTS = ['소방행정과', '재난대응과', '예방안전과', '현장대응단'];
 
 function AddModal({ onClose, onCreated }) {
   const user = useUser();
-  const [form , setForm] = useState({
+  const [form, setForm] = useState({
     name: '',
     email: '',
     phone_number: '',
     rank: '소방사',
     unit_type: '본서',
     safety_center_id: null,
+    department: null,
   });
 
   const [safetyCenters, setSafetyCenters] = useState([]);
@@ -35,8 +37,8 @@ function AddModal({ onClose, onCreated }) {
   }
 
   async function handleUnitTypeChange(type) {
-    setForm((prev) => ({ ...prev, unit_type: type, safety_center_id: null }));
-    if (type === '안전센터' || type === '지역대') {
+    setForm((prev) => ({ ...prev, unit_type: type, safety_center_id: null, department: null }));
+    if (FACILITY_UNIT_TYPES.includes(type)) {
       setCentersLoading(true);
       setSafetyCenters([]);
       try {
@@ -62,8 +64,11 @@ function AddModal({ onClose, onCreated }) {
     const e = {};
     if (!form.name.trim()) e.name = '이름을 입력하세요.';
     if (!form.email.trim()) e.email = '이메일을 입력하세요.';
-    if (['안전센터', '지역대'].includes(form.unit_type) && !form.safety_center_id) {
+    if (FACILITY_UNIT_TYPES.includes(form.unit_type) && !form.safety_center_id) {
       e.safety_center_id = `${form.unit_type}를 선택하세요.`;
+    }
+    if (form.unit_type === '본서' && !form.department) {
+      e.department = '소속 과를 선택하세요.';
     }
     return e;
   }
@@ -80,6 +85,7 @@ function AddModal({ onClose, onCreated }) {
         rank: form.rank,
         unit_type: form.unit_type,
         safety_center_id: form.safety_center_id,
+        department: form.department,
         station_id: user.station_id,
       });
       setResult(data);
@@ -186,10 +192,10 @@ function AddModal({ onClose, onCreated }) {
           <div className="admin-field">
             <label className="admin-field-label">이메일</label>
             <input
-                className={`admin-input${errors.email ? ' is-error' : ''}`}
-                placeholder="이메일"
-                value={form.email}
-                onChange={set('email')}
+              className={`admin-input${errors.email ? ' is-error' : ''}`}
+              placeholder="이메일"
+              value={form.email}
+              onChange={set('email')}
             />
             {errors.email && <span className="admin-field-error">{errors.email}</span>}
           </div>
@@ -197,13 +203,12 @@ function AddModal({ onClose, onCreated }) {
           <div className="admin-field">
             <label className="admin-field-label">연락처</label>
             <input
-                className='admin-input'
-                placeholder="010-0000-0000"
-                value={form.phone_number}
-                onChange={handlePhone}
+              className="admin-input"
+              placeholder="010-0000-0000"
+              value={form.phone_number}
+              onChange={handlePhone}
             />
             <span className="admin-field-hint">대원이 최초 로그인 후 직접 비밀번호를 변경하게 됩니다.</span>
-            {errors.password && <span className="admin-field-error">{errors.password}</span>}
           </div>
 
           <div className="admin-field">
@@ -222,7 +227,7 @@ function AddModal({ onClose, onCreated }) {
             </div>
           </div>
 
-          {(form.unit_type === '안전센터' || form.unit_type === '지역대') && (
+          {FACILITY_UNIT_TYPES.includes(form.unit_type) && (
             <div className="admin-field">
               <label className="admin-field-label">{form.unit_type} 선택 <span className="admin-required">*</span></label>
               {centersLoading ? (
@@ -230,7 +235,7 @@ function AddModal({ onClose, onCreated }) {
               ) : safetyCenters.length === 0 ? (
                 <span className="admin-field-hint">등록된 {form.unit_type}가 없습니다.</span>
               ) : (
-                <div className="admin-chips">
+                <div className="admin-chips admin-chips--grid3">
                   {safetyCenters.map((c) => (
                     <button
                       key={c.id}
@@ -245,6 +250,27 @@ function AddModal({ onClose, onCreated }) {
               )}
               {errors.safety_center_id && (
                 <span className="admin-field-error">{errors.safety_center_id}</span>
+              )}
+            </div>
+          )}
+
+          {form.unit_type === '본서' && (
+            <div className="admin-field">
+              <label className="admin-field-label">소속 과 <span className="admin-required">*</span></label>
+              <div className="admin-chips admin-chips--grid3">
+                {DEPARTMENTS.map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    className={`admin-chip${form.department === d ? ' active' : ''}`}
+                    onClick={() => setForm((prev) => ({ ...prev, department: d }))}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+              {errors.department && (
+                <span className="admin-field-error">{errors.department}</span>
               )}
             </div>
           )}
@@ -271,12 +297,14 @@ function EditModal({ member, onClose, onSaved }) {
   const [centersLoading, setCentersLoading] = useState(false);
   const [selectedUnitType, setSelectedUnitType] = useState(member.unit_type ?? '본서');
   const [selectedCenterId, setSelectedCenterId] = useState(member.safety_center_id ?? null);
+  const [selectedDepartment, setSelectedDepartment] = useState(member.department ?? null);
   const [transferStationId, setTransferStationId] = useState('');
 
   async function handleUnitTypeChange(type) {
     setSelectedUnitType(type);
     setSelectedCenterId(null);
-    if (type === '안전센터' || type === '지역대') {
+    setSelectedDepartment(null);
+    if (FACILITY_UNIT_TYPES.includes(type)) {
       setCentersLoading(true);
       setSafetyCenters([]);
       try {
@@ -291,14 +319,16 @@ function EditModal({ member, onClose, onSaved }) {
   }
 
   useEffect(() => {
-    if (member.unit_type === '안전센터' || member.unit_type === '지역대') {
-      setCentersLoading(true);
-      getUnits(member.unit_type)
-        .then(setSafetyCenters)
-        .catch(() => setSafetyCenters([]))
-        .finally(() => setCentersLoading(false));
+    if (FACILITY_UNIT_TYPES.includes(member.unit_type)) {
+      Promise.resolve().then(() => {
+        setCentersLoading(true);
+        getUnits(member.unit_type)
+          .then(setSafetyCenters)
+          .catch(() => setSafetyCenters([]))
+          .finally(() => setCentersLoading(false));
+      });
     }
-  }, []);
+  }, [member.unit_type]);
 
   async function handleReset() {
     setLoadingReset(true);
@@ -316,7 +346,11 @@ function EditModal({ member, onClose, onSaved }) {
   async function handleSave() {
     setLoadingSave(true);
     try {
-      const payload = { unit_type: selectedUnitType, safety_center_id: ['안전센터', '지역대'].includes(selectedUnitType) ? selectedCenterId : null };
+      const payload = {
+        unit_type: selectedUnitType,
+        safety_center_id: FACILITY_UNIT_TYPES.includes(selectedUnitType) ? selectedCenterId : null,
+        department: selectedUnitType === '본서' ? selectedDepartment : null,
+      };
       if (transferStationId.trim()) payload.station_id = Number(transferStationId);
       await client.patch(`/admin/users/${member.id}`, payload);
       onSaved();
@@ -372,6 +406,7 @@ function EditModal({ member, onClose, onSaved }) {
               현재 소속 &nbsp;·&nbsp;
               <span>{member.station_name}</span>
               {member.unit_name && <> &nbsp;/&nbsp; <span>{member.unit_name}</span></>}
+              {member.department && <> &nbsp;/&nbsp; <span>{member.department}</span></>}
             </div>
             <div className="admin-chips">
               {UNIT_TYPES.map((u) => (
@@ -385,13 +420,13 @@ function EditModal({ member, onClose, onSaved }) {
                 </button>
               ))}
             </div>
-            {(selectedUnitType === '안전센터' || selectedUnitType === '지역대') && (
+            {FACILITY_UNIT_TYPES.includes(selectedUnitType) && (
               centersLoading ? (
                 <span className="admin-field-hint">불러오는 중…</span>
               ) : safetyCenters.length === 0 ? (
                 <span className="admin-field-hint">등록된 {selectedUnitType}가 없습니다.</span>
               ) : (
-                <div className="admin-chips">
+                <div className="admin-chips admin-chips--grid3">
                   {safetyCenters.map((c) => (
                     <button
                       key={c.id}
@@ -404,6 +439,20 @@ function EditModal({ member, onClose, onSaved }) {
                   ))}
                 </div>
               )
+            )}
+            {selectedUnitType === '본서' && (
+              <div className="admin-chips admin-chips--grid3">
+                {DEPARTMENTS.map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    className={`admin-chip${selectedDepartment === d ? ' active' : ''}`}
+                    onClick={() => setSelectedDepartment(d)}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 
@@ -453,7 +502,7 @@ function Admin() {
   }, []);
 
   useEffect(() => {
-    fetchMembers();
+    Promise.resolve().then(() => fetchMembers());
   }, [fetchMembers]);
 
   function handleCreated() {

@@ -27,7 +27,7 @@ function Stats() {
 
   useEffect(() => {
     let cancelled = false;
-    setStatus('loading');
+    Promise.resolve().then(() => { if (!cancelled) setStatus('loading'); });
 
     getStatisticsOverview(year)
       .then((result) => {
@@ -174,9 +174,6 @@ function Stats() {
                         style={{ width: `${formatPct(ratio)}%`, background: TYPE_COLOR[type] }}
                       />
                     </div>
-                    {data.type_breakdown_notes?.[type] && (
-                      <span className="stats-type-note">{data.type_breakdown_notes[type]}</span>
-                    )}
                   </div>
                 ))}
               </div>

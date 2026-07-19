@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../layouts/dashboardlayout';
 import InspectionAddModal from './inspectionAdd';
 import InspectionCompleteModal from './inspectionComplete';
-import { getInspections, startInspection, completeInspection } from '../../../api/inspections';
+import { getInspections, startInspection } from '../../../api/inspections';
 import './inspection.css';
 
 const INSPECTION_TYPES = ['화재안전', '위험물', '소방시설', '피난시설', '산악대비'];
@@ -32,7 +32,7 @@ function InspectionPage() {
   }, []);
 
   useEffect(() => {
-    fetchInspections();
+    Promise.resolve().then(() => fetchInspections());
   }, [fetchInspections]);
 
   const filtered = activeType === '전체'

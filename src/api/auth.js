@@ -1,13 +1,12 @@
 import client from "./client";
 
-export async function login(firefighterNumber, password, rememberMe = true) {
+export async function login(firefighterNumber, password) {
     const response = await client.post("/auth/login", {
         firefighter_number: firefighterNumber,
         password: password,
     });
 
     const { access_token, must_change_password } = response.data;
-    const storage = rememberMe ? localStorage : sessionStorage;
 
     localStorage.setItem("access_token", access_token);
     localStorage.setItem("must_change_password", must_change_password);

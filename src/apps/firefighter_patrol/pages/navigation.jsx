@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import PatrolLayout from '../layouts/patrollayout';
 import { loadKakaoMap } from '../utils/loadKakaoMap';
-import { RISK_ZONES } from '../data/riskZones';
 import { getRoute } from '../../../api/navigation';
+import { updateIncidentStatus } from '../../../api/incidents';
 import '../style/markers.css';
 import './navigation.css';
 
-const DESTINATION = RISK_ZONES.find((zone) => zone.type === '건물붕괴');
 const ARRIVAL_THRESHOLD_METERS = 100;
 const GUIDE_ADVANCE_THRESHOLD_METERS = 30;
 const FOLLOW_ZOOM_LEVEL = 4;
@@ -26,18 +25,27 @@ function getDistanceMeters(lat1, lng1, lat2, lng2) {
 function PatrolNavigation() {
   const mapContainerRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const incident = location.state?.incident;
   const [arrived, setArrived] = useState(false);
   const [route, setRoute] = useState(null);
+  const [eta, setEta] = useState(null);
   const [guideIndex, setGuideIndex] = useState(1);
 
   useEffect(() => {
+    if (!incident || incident.latitude == null || incident.longitude == null) {
+      navigate('/firefighter_patrol');
+      return;
+    }
+
     let watchId;
+    let arrivedNotified = false;
     const guidesRef = { current: [] };
     const guideIndexRef = { current: 1 };
     const followingRef = { current: false };
 
     loadKakaoMap().then((kakao) => {
-      const destPos = new kakao.maps.LatLng(DESTINATION.lat, DESTINATION.lng);
+      const destPos = new kakao.maps.LatLng(incident.latitude, incident.longitude);
 
       const map = new kakao.maps.Map(mapContainerRef.current, {
         center: destPos,
@@ -63,8 +71,9 @@ function PatrolNavigation() {
       navigator.geolocation.getCurrentPosition((position) => {
         const { latitude, longitude } = position.coords;
 
-        getRoute(latitude, longitude, DESTINATION.lat, DESTINATION.lng).then((data) => {
+        getRoute(latitude, longitude, incident.latitude, incident.longitude).then((data) => {
           setRoute(data);
+          setEta(new Date(Date.now() + data.duration_s * 1000));
           guidesRef.current = data.guides;
 
           const path = data.path.map((p) => new kakao.maps.LatLng(p.lat, p.lng));
@@ -106,8 +115,13 @@ function PatrolNavigation() {
           setGuideIndex(guideIndexRef.current);
         }
 
-        if (getDistanceMeters(latitude, longitude, DESTINATION.lat, DESTINATION.lng) <= ARRIVAL_THRESHOLD_METERS) {
+        if (
+          !arrivedNotified &&
+          getDistanceMeters(latitude, longitude, incident.latitude, incident.longitude) <= ARRIVAL_THRESHOLD_METERS
+        ) {
+          arrivedNotified = true;
           setArrived(true);
+          updateIncidentStatus(incident.id, '현장도착').catch(() => {});
         }
       });
     });
@@ -117,10 +131,11 @@ function PatrolNavigation() {
         navigator.geolocation.clearWatch(watchId);
       }
     };
-  }, []);
+  }, [incident, navigate]);
+
+  if (!incident) return null;
 
   const currentGuide = route?.guides?.[guideIndex];
-  const eta = route ? new Date(Date.now() + route.duration_s * 1000) : null;
 
   return (
     <PatrolLayout>
@@ -138,8 +153,8 @@ function PatrolNavigation() {
           <div className="patrol-nav-card-head">
             <i className="bi bi-building patrol-nav-card-icon" />
             <div>
-              <span className="patrol-nav-card-title">{DESTINATION.type} 출동</span>
-              <span className="patrol-nav-card-sub">{DESTINATION.name} · 관할 내</span>
+              <span className="patrol-nav-card-title">{incident.incident_type} 출동</span>
+              <span className="patrol-nav-card-sub">{incident.dong_name} · 관할 내</span>
             </div>
           </div>
 
@@ -165,13 +180,28 @@ function PatrolNavigation() {
           </div>
 
           <div className={`patrol-nav-actions${arrived ? '' : ' patrol-nav-actions--single'}`}>
-            <button className="patrol-nav-btn patrol-nav-btn--ghost" onClick={() => navigate('/firefighter_patrol')}>
-              순찰 복귀
-            </button>
-            {arrived && (
-              <span className="patrol-nav-arrived-badge">
-                <i className="bi bi-check-circle-fill" /> 도착 확인됨
-              </span>
+            {arrived ? (
+              <>
+                <button
+                  className="patrol-nav-btn patrol-nav-btn--ghost"
+                  onClick={() => navigate('/firefighter_patrol/return', { state: { incident, isFalseAlarm: true } })}
+                >
+                  허위 신고
+                </button>
+                <button
+                  className="patrol-nav-btn patrol-nav-btn--primary"
+                  onClick={() => navigate('/firefighter_patrol/return', { state: { incident, isFalseAlarm: false } })}
+                >
+                  출동 종료
+                </button>
+              </>
+            ) : (
+              <button
+                className="patrol-nav-btn patrol-nav-btn--ghost"
+                onClick={() => navigate('/firefighter_patrol/return', { state: { incident, isFalseAlarm: false } })}
+              >
+                순찰 복귀
+              </button>
             )}
           </div>
         </div>

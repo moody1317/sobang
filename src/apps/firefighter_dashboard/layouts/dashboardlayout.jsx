@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import Sidebar from '../components/sidebar';
 import Header from '../components/header';
-import { useRefreshAlertCount } from '../contexts/alertcontext';
+import { useRefreshAlertCount } from '../contexts/alertHooks';
 import './dashboardlayout.css';
 
 function DashboardLayout({ children }) {

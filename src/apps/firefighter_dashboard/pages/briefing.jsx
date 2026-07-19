@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../layouts/dashboardlayout';
-import { useUser } from '../contexts/usercontext';
+import { useUser } from '../contexts/userHooks';
 import { getRiskMapDongs } from '../../../api/riskMap';
 import { getMySchedule } from '../../../api/schedule';
 import { LEVEL_CLASS, LEVEL_BY_KEY, resolveLevel, topBreakdownLabel } from '../utils/riskScore';
@@ -89,7 +89,7 @@ function Briefing() {
       counts[resolveLevel(Number(d.risk_score))] += 1;
     });
     return counts;
-  }, [dongs, resolveLevel]);
+  }, [dongs]);
 
   const topDong = rankedByScore[0] ?? null;
   const avgLevel = avgScore == null ? null : LEVEL_BY_KEY[resolveLevel(avgScore)];

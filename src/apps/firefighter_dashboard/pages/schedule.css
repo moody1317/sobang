@@ -81,7 +81,7 @@
 
 .sch-licon { font-size: 12px; flex-shrink: 0; }
 .sch-licon--patrol   { color: var(--color-risk-caution); }
-.sch-licon--training { color: var(--color-risk-safe); }
+.sch-licon--dispatch { color: var(--color-risk-safe); }
 
 .sch-cal-grid {
   display: grid;
@@ -193,7 +193,7 @@
 
 .sch-act-icon { font-size: 10px; }
 .sch-act-icon--patrol   { color: var(--color-risk-caution); }
-.sch-act-icon--training { color: var(--color-risk-safe); }
+.sch-act-icon--dispatch { color: var(--color-risk-safe); }
 
 .sch-detail {
   display: flex;
@@ -347,9 +347,11 @@
   font-weight: 700;
 }
 
+.sch-act-btn--readonly { cursor: default; }
+
 .sch-act-btn-icon { font-size: 14px; }
 .sch-act-btn-icon--patrol   { color: var(--color-risk-caution); }
-.sch-act-btn-icon--training { color: var(--color-risk-safe); }
+.sch-act-btn-icon--dispatch { color: var(--color-risk-safe); }
 
 .sch-admin-btn {
   width: 100%;

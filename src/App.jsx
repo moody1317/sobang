@@ -20,6 +20,7 @@ import PatrolLogin from './apps/firefighter_patrol/pages/login';
 import PatrolHome from './apps/firefighter_patrol/pages/patrolhome';
 import PatrolDispatch from './apps/firefighter_patrol/pages/dispatch';
 import PatrolNavigation from './apps/firefighter_patrol/pages/navigation';
+import PatrolReturn from './apps/firefighter_patrol/pages/return';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './shared/style/global.css';
 
@@ -141,6 +142,14 @@ function App() {
             element={
               <PatrolProtectedRoute>
                 <PatrolNavigation />
+              </PatrolProtectedRoute>
+            }
+          />
+          <Route
+            path='/firefighter_patrol/return'
+            element={
+              <PatrolProtectedRoute>
+                <PatrolReturn />
               </PatrolProtectedRoute>
             }
           />

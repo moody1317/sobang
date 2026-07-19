@@ -1,10 +1,6 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { getUnreadNotificationCount } from '../../../api/notifications';
-
-const AlertContext = createContext(null);
-
-export const useAlertCount = () => useContext(AlertContext)?.unreadCount ?? 0;
-export const useRefreshAlertCount = () => useContext(AlertContext)?.refreshUnreadCount;
+import { AlertContext } from './alertContextValue';
 
 export function AlertProvider({ children }) {
   const [unreadCount, setUnreadCount] = useState(0);
@@ -15,6 +11,7 @@ export function AlertProvider({ children }) {
       const data = await getUnreadNotificationCount();
       setUnreadCount(data.unread_count);
     } catch {
+      // 배지 갱신 실패는 조용히 무시
     }
   }, []);
 

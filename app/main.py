@@ -1,3 +1,4 @@
+import threading
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -5,7 +6,8 @@ import app.api.v1.auth as auth
 import app.api.v1.admin as admin
 import app.api.v1.station as stations
 
-from app.core.database import Base, engine
+from app.core.database import Base, SessionLocal, engine
+from app.api.v1.statistics import warm_ems_hourly_cache
 import app.models.station
 import app.models.user
 import app.models.safety_center
@@ -37,9 +39,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+def _warm_caches():
+    db = SessionLocal()
+    try:
+        warm_ems_hourly_cache(db)
+    finally:
+        db.close()
+
 @app.on_event("startup")
 def on_startup():
     Base.metadata.create_all(bind=engine)
+    threading.Thread(target=_warm_caches, daemon=True).start()
 
 @app.get("/")
 def root():

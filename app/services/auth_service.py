@@ -10,6 +10,7 @@ from app.models.ambulance_unit import AmbulanceUnit
 from app.models.aviation_unit import AviationUnit
 from app.models.special_response_unit import SpecialResponseUnit
 from app.models.local_unit import LocalUnit
+from app.models.rescue_unit import RescueUnit
 
 UNIT_TABLE_MAP = {
     UnitType.SAFETY_CENTER: SafetyCenter,
@@ -17,6 +18,7 @@ UNIT_TABLE_MAP = {
     UnitType.AVIATION: AviationUnit,
     UnitType.SPECIAL_RESPONSE: SpecialResponseUnit,
     UnitType.LOCAL_UNIT: LocalUnit,
+    UnitType.RESCUE_SQUAD: RescueUnit,
 }
 
 def generate_firefighter_number(db: Session, station_id: int) -> str:
@@ -31,7 +33,6 @@ def generate_firefighter_number(db: Session, station_id: int) -> str:
         if not get_user_by_firefighter_number(db, candidate):
             return candidate
         seq += 1
-\
 
 def change_password(db: Session, user:User, current_password: str, new_password: str):
     if not verify_password(current_password, user.password_hash):
@@ -84,6 +85,7 @@ def create_user(db: Session, user_data: UserCreate) -> tuple[User, str]:
         raise ValueError("이미 사용 중인 이메일입니다.")
 
     safety_center_id = None
+    department = None
     model = UNIT_TABLE_MAP.get(user_data.unit_type)
 
     if model is not None:
@@ -93,6 +95,10 @@ def create_user(db: Session, user_data: UserCreate) -> tuple[User, str]:
         if not unit:
             raise ValueError("선택한 시설 정보가 올바르지 않습니다.")
         safety_center_id = user_data.safety_center_id
+    elif user_data.unit_type == UnitType.HEADQUARTERS:
+        if user_data.department is None:
+            raise ValueError("본서 소속은 소속 과를 선택해야 합니다.")
+        department = user_data.department
 
     firefighter_number = generate_firefighter_number(db, user_data.station_id)
     temp_password = generate_temp_password()
@@ -108,6 +114,7 @@ def create_user(db: Session, user_data: UserCreate) -> tuple[User, str]:
         station_id=user_data.station_id,
         unit_type=user_data.unit_type,
         safety_center_id=safety_center_id,
+        department=department,
         is_active=True,
         must_change_password=True,
     )
@@ -175,8 +182,9 @@ def update_user_unit(db: Session, user_id: int, data: "UserUnitUpdateRequest") -
 
     user.unit_type = data.unit_type
     user.safety_center_id = data.safety_center_id if data.unit_type in (
-        UnitType.SAFETY_CENTER, UnitType.LOCAL_UNIT
+        UnitType.SAFETY_CENTER, UnitType.LOCAL_UNIT, UnitType.RESCUE_SQUAD
     ) else None
+    user.department = data.department if data.unit_type == UnitType.HEADQUARTERS else None
 
     if data.station_id:
         user.station_id = data.station_id

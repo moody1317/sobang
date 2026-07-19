@@ -13,6 +13,7 @@ from app.models.ambulance_unit import AmbulanceUnit
 from app.models.aviation_unit import AviationUnit
 from app.models.special_response_unit import SpecialResponseUnit
 from app.models.local_unit import LocalUnit
+from app.models.rescue_unit import RescueUnit
 
 UNIT_TABLE_MAP = {
     "안전센터": SafetyCenter,
@@ -20,6 +21,7 @@ UNIT_TABLE_MAP = {
     "항공대": AviationUnit,
     "특수대응단": SpecialResponseUnit,
     "지역대": LocalUnit,
+    "119구조대": RescueUnit,
 }
 
 router = APIRouter(prefix="/stations", tags=["stations"])

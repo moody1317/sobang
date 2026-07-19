@@ -12,6 +12,7 @@ from app.services.incident_service import simulate_incident as simulate_incident
 from app.services.notification_service import create_notification
 from app.services.risk_score_service import recalculate_active_incident_boost
 from app.services import incident_dispatch_service
+from app.services import vehicle_dispatch_service
 
 router = APIRouter(prefix="/incidents", tags=["incidents"])
 
@@ -30,8 +31,6 @@ def simulate_incident(
     latitude: float = None,
     longitude: float = None,
     description: str = None,
-    fire_truck_count: int = 0,
-    ambulance_count: int = 0,
     db: Session = Depends(get_db_session),
 ):
     incident, notification = simulate_incident_service(
@@ -43,8 +42,6 @@ def simulate_incident(
         latitude=latitude,
         longitude=longitude,
         description=description,
-        fire_truck_count=fire_truck_count,
-        ambulance_count=ambulance_count,
     )
     recalculate_active_incident_boost(db, incident)
     return {
@@ -54,8 +51,7 @@ def simulate_incident(
         "dong_name": incident.dong_name,
         "safety_center_id": incident.safety_center_id,
         "notification_id": notification.id,
-        "fire_truck_count": incident.fire_truck_count,
-        "ambulance_count": incident.ambulance_count,
+        **incident_dispatch_service.get_dispatch_summary(db, incident),
     }
 
 @router.patch("/{incident_id}/status")
@@ -118,6 +114,7 @@ def list_active_incidents(db: Session = Depends(get_db_session)):
             "longitude": float(i.longitude) if i.longitude is not None else None,
             "description": i.description,
             "reported_at": i.reported_at.isoformat(),
+            "vehicles": vehicle_dispatch_service.get_vehicle_assignments(db, i.id),
             **incident_dispatch_service.get_dispatch_summary(db, i),
         }
         for i in items
@@ -164,6 +161,11 @@ def list_incident_dispatches(incident_id: int, db: Session = Depends(get_db_sess
         }
         for dispatch, user in rows
     ]
+
+@router.get("/{incident_id}/vehicles")
+def list_incident_vehicles(incident_id: int, db: Session = Depends(get_db_session)):
+    """이 사건에 자동 배정된 차량 목록"""
+    return vehicle_dispatch_service.get_vehicle_assignments(db, incident_id)
 
 @router.get("/dispatches/my")
 def list_my_dispatch_dates(

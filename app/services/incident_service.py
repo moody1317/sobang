@@ -6,6 +6,7 @@ from app.models.incident import Incident, IncidentType, IncidentStatus
 from app.models.notification import Notification, NotificationLevel
 from app.models.safety_center import SafetyCenter
 from app.models.jurisdiction import Jurisdiction
+from app.services.vehicle_dispatch_service import assign_vehicles_for_incident
 
 DONG_POOL = ["중앙동", "탑대성동", "미원면", "금천동", "산남동", "복대동", "용암동", "오송읍"]
 
@@ -67,8 +68,6 @@ def simulate_incident(
     latitude: float | None = None,
     longitude: float | None = None,
     description: str | None = None,
-    fire_truck_count: int = 0,
-    ambulance_count: int = 0,
 ) -> tuple[Incident, Notification]:
     incident_type = incident_type or random.choice(list(IncidentType))
     dong_name = dong_name or random.choice(DONG_POOL)
@@ -94,11 +93,12 @@ def simulate_incident(
         longitude=str(longitude) if longitude is not None else None,
         description=description,
         is_simulated="Y",
-        fire_truck_count=fire_truck_count,
-        ambulance_count=ambulance_count,
     )
     db.add(incident)
     db.flush()
+
+    if station_id:
+        assign_vehicles_for_incident(db, incident, station_id)
 
     notification = Notification(
         level=LEVEL_MAP[incident_type],

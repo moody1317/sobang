@@ -12,7 +12,14 @@ class UnitType(PyEnum):
     AVIATION = "항공대"
     SPECIAL_RESPONSE = "특수대응단"
     LOCAL_UNIT = "지역대"
+    RESCUE_SQUAD = "119구조대"
     OTHER = "기타"
+
+class Department(PyEnum):
+    ADMINISTRATION = "소방행정과"
+    DISASTER_RESPONSE = "재난대응과"
+    PREVENTION_SAFETY = "예방안전과"
+    FIELD_RESPONSE = "현장대응단"
 
 class User(Base):
     __tablename__ = "users"
@@ -32,6 +39,10 @@ class User(Base):
         nullable=False,
     )
     safety_center_id = Column(Integer, nullable=True)
+    department = Column(
+        SAEnum(Department, values_callable=lambda x: [e.value for e in x]),
+        nullable=True,
+    )
     local_unit_id = Column(Integer, ForeignKey("local_units.id"), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     must_change_password = Column(Boolean, default=True, nullable=False)

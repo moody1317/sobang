@@ -4,17 +4,20 @@ from sqlalchemy.orm import Session
 
 from app.models.incident import Incident, IncidentStatus
 from app.models.incident_dispatch import IncidentDispatch, DispatchRole
+from app.models.incident_vehicle_assignment import IncidentVehicleAssignment
 from app.models.user import User, UnitType
 
-FIREFIGHTERS_PER_TRUCK = 4
-RESCUERS_PER_AMBULANCE = 3
-
 def infer_unit_role(user: User) -> DispatchRole:
-    return DispatchRole.rescuer if user.unit_type == UnitType.AMBULANCE else DispatchRole.firefighter
+    return DispatchRole.rescuer if user.unit_type == UnitType.RESCUE_SQUAD else DispatchRole.firefighter
 
 def get_dispatch_summary(db: Session, incident: Incident) -> dict:
-    required_firefighter_count = incident.fire_truck_count * FIREFIGHTERS_PER_TRUCK
-    required_rescuer_count = incident.ambulance_count * RESCUERS_PER_AMBULANCE
+    required_crew = (
+        db.query(IncidentVehicleAssignment.unit_role, IncidentVehicleAssignment.required_crew)
+        .filter(IncidentVehicleAssignment.incident_id == incident.id)
+        .all()
+    )
+    required_firefighter_count = sum(c for role, c in required_crew if role == DispatchRole.firefighter)
+    required_rescuer_count = sum(c for role, c in required_crew if role == DispatchRole.rescuer)
 
     roles = [
         role for (role,) in
@@ -46,9 +49,13 @@ def confirm_dispatch(db: Session, incident: Incident, user: User) -> IncidentDis
     role = infer_unit_role(user)
     summary = get_dispatch_summary(db, incident)
     if role == DispatchRole.firefighter:
+        if summary["required_firefighter_count"] == 0:
+            raise ValueError("이 사건에는 소방관 배정이 필요하지 않습니다.")
         if summary["assigned_firefighter_count"] >= summary["required_firefighter_count"]:
             raise ValueError("소방관 출동 정원이 이미 찼습니다.")
     else:
+        if summary["required_rescuer_count"] == 0:
+            raise ValueError("이 사건에는 구급/구조 인력 배정이 필요하지 않습니다.")
         if summary["assigned_rescuer_count"] >= summary["required_rescuer_count"]:
             raise ValueError("구급대원 출동 정원이 이미 찼습니다.")
 

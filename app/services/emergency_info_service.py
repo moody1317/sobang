@@ -1,3 +1,4 @@
+from functools import lru_cache
 import requests
 from app.core.config import settings
 
@@ -65,6 +66,7 @@ def get_recent_ems_months(count: int = 3) -> list[str]:
             year -= 1
     return months
 
+@lru_cache(maxsize=256)  # 정부 API 페이지네이션 호출이 수십 초 걸림 — LATEST_EMS_STAT_MONTH는 코드 배포로만 바뀌므로 프로세스 재시작이 곧 무효화
 def get_ems_hourly_buckets(station_name: str, sido_full_name: str) -> dict:
     short_name = extract_short_station_name(station_name)
     sido_name = SIDO_ABBR_MAP.get(sido_full_name)

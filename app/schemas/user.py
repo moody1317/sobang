@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, EmailStr
 
-from app.models.user import UnitType
+from app.models.user import UnitType, Department
 
 class UserBase(BaseModel):
     firefighter_number: str
@@ -25,12 +25,14 @@ class UserCreate(BaseModel):
     station_id: int
     unit_type: UnitType = UnitType.HEADQUARTERS
     safety_center_id: Optional[int] = None
+    department: Optional[Department] = None
 
 class UserResponse(UserBase):
     id: int
     created_at: datetime
     updated_at: datetime
     unit_type: str
+    department: Optional[str] = None
     station_name: Optional[str] = None
     unit_name: Optional[str] = None
 
@@ -53,6 +55,7 @@ class UserListResponse(BaseModel):
     rank: Optional[str] = None
     phone_number: Optional[str] = None
     unit_type: str
+    department: Optional[str] = None
     station_name: Optional[str] = None
     unit_name: Optional[str] = None
     is_active: bool
@@ -64,3 +67,4 @@ class UserUnitUpdateRequest(BaseModel):
     unit_type: UnitType
     safety_center_id: Optional[int] = None
     station_id: Optional[int] = None
+    department: Optional[Department] = None

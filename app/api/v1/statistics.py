@@ -19,13 +19,21 @@ from app.services.risk_score_service import get_my_dong_boundaries, resolve_risk
 router = APIRouter(prefix="/statistics", tags=["statistics"])
 
 
+def warm_ems_hourly_cache(db: Session) -> None:
+    station_ids = {sid for (sid,) in db.query(User.station_id).filter(User.station_id.isnot(None)).distinct().all()}
+    if not station_ids:
+        return
+    station_names = {s.station_name for s in db.query(Station).filter(Station.id.in_(station_ids)).all()}
+    for name in station_names:
+        get_ems_hourly_buckets(name, "충청북도")
+
+
 def get_my_safety_center_ids(db: Session, current_user: User) -> list[int]:
     jurisdictions = get_my_jurisdictions(db, current_user)
     return list({j.safety_center_id for j in jurisdictions if j.safety_center_id})
 
 
 def get_my_sigungu_set(db: Session, current_user: User) -> set:
-    """로그인 사용자 관할구역이 속한 시군구 이름 집합 (CSV 데이터의 gu_nm과 직접 매칭)"""
     if current_user.unit_type == UnitType.SAFETY_CENTER and current_user.safety_center_id:
         jurisdictions = db.query(Jurisdiction).filter(
             Jurisdiction.safety_center_id == current_user.safety_center_id,
@@ -49,7 +57,7 @@ def get_my_sigungu_set(db: Session, current_user: User) -> set:
 
 def _build_overview_for_year(db: Session, current_user: User, center_ids: list[int], sigungu_set: set, year: int) -> dict:
     year_start = f"{year}0101"
-    year_end = f"{year}1231235959"  # rcpt_dt는 시분초까지 포함, dclr_ymd는 앞 8자리만 비교되므로 넉넉히 잡음
+    year_end = f"{year}1231235959"  
 
     fire_dates = [
         r[0] for r in db.query(FireIncident.rcpt_dt).filter(
@@ -77,7 +85,7 @@ def _build_overview_for_year(db: Session, current_user: User, center_ids: list[i
 
     monthly = defaultdict(int)
     for d in fire_dates:
-        if d:
+        if d:   
             monthly[d[:6]] += 1
     for d in ems_dates:
         if d:

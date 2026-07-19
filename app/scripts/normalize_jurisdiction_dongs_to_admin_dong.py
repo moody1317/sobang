@@ -1,4 +1,3 @@
-# app/scripts/normalize_jurisdiction_dongs_to_admin_dong.py
 import openpyxl
 from app.core.database import SessionLocal
 from app.models.jurisdiction_dong import JurisdictionDong

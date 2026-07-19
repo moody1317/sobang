@@ -1,4 +1,3 @@
-# app/scripts/check_cheongju.py
 from app.services.forest_fire_risk_service import fetch_forest_fire_risk_raw, parse_forest_fire_risk
 
 if __name__ == "__main__":

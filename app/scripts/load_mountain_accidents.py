@@ -1,4 +1,3 @@
-# app/scripts/load_mountain_accidents.py
 import pandas as pd
 from datetime import datetime
 from app.core.database import SessionLocal
@@ -24,8 +23,8 @@ if __name__ == "__main__":
     df = pd.read_csv(CSV_PATH, encoding="cp949")
     db = SessionLocal()
 
-    db.query(MountainAccident).delete()   # 재적재 시 중복 방지, 매년 갱신되는 연간 스냅샷이라 통째로 교체
-
+    db.query(MountainAccident).delete()
+    
     created = 0
     for _, row in df.iterrows():
         db.add(MountainAccident(

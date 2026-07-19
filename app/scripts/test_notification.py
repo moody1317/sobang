@@ -1,4 +1,3 @@
-# app/scripts/test_notification.py
 from datetime import datetime
 from app.core.database import SessionLocal
 from app.services.earthquake_service import register_earthquake_event

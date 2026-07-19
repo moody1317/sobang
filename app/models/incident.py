@@ -1,6 +1,5 @@
-# app/models/incident.py
 import enum
-from sqlalchemy import Column, Integer, String, DateTime, Enum, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Enum, ForeignKey, Boolean
 from sqlalchemy.sql import func
 from app.core.database import Base
 
@@ -38,3 +37,7 @@ class Incident(Base):
 
     description = Column(String(500), nullable=True)
     is_simulated = Column(String(1), nullable=False, default="Y")
+    is_false_alarm = Column(Boolean, nullable=False, default=False)
+
+    fire_truck_count = Column(Integer, nullable=False, default=0)
+    ambulance_count = Column(Integer, nullable=False, default=0)

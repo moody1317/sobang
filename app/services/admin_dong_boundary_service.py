@@ -1,10 +1,8 @@
-# app/services/admin_dong_boundary_service.py
 import json
 import openpyxl
 from sqlalchemy.orm import Session
 
 from app.models.admin_dong_boundary import AdminDongBoundary
-
 
 def load_admin_dong_boundary_master(db: Session, xlsx_path: str) -> dict:
     wb = openpyxl.load_workbook(xlsx_path, data_only=True)
@@ -13,7 +11,7 @@ def load_admin_dong_boundary_master(db: Session, xlsx_path: str) -> dict:
     created, updated, skipped = 0, 0, 0
     for row in ws.iter_rows(min_row=2, values_only=True):
         admin_code, sido_nm, sigungu_nm, dong_nm, _created_at, closed_at = row
-        if not dong_nm or closed_at:   # 읍면동 아닌 상위 행정구역 행, 폐지된 동 제외
+        if not dong_nm or closed_at:
             skipped += 1
             continue
 

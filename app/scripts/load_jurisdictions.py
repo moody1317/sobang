@@ -9,5 +9,5 @@ if __name__ == "__main__":
     result = save_jurisdictions(db, jurisdictions)
     print(f"매칭됨: {result['matched']}, 매칭 안됨: {result['unmatched']}")
     print("매칭 안 된 이름들:")
-    for name in result["unmatched_names"][:30]:   # 일단 30개만 미리보기
+    for name in result["unmatched_names"][:30]:
         print(" -", name)

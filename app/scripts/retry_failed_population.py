@@ -1,4 +1,3 @@
-# app/scripts/retry_failed_population.py
 from app.core.database import SessionLocal
 from app.services.population_service import (
     fetch_total_count, fetch_population_raw, parse_population_xml, upsert_population_stats

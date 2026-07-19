@@ -1,4 +1,3 @@
-# app/scripts/test_ems_debug2.py
 from app.services.ems_incident_service import fetch_ems_incidents_raw
 
 if __name__ == "__main__":
@@ -12,8 +11,3 @@ if __name__ == "__main__":
 
     r_exact = fetch_ems_incidents_raw(page=1, size=3, dspt_ymd_prefix="20250609")
     print("정확값 필터 total:", r_exact["total"])
-
-    # https://www.bigdata-119.kr/fsdpApi/rest/v1/ems-incidents?page=1&size=3
-    # https://www.bigdata-119.kr/fsdpApi/rest/v1/ems-incidents?page=2&size=3
-    # https://www.bigdata-119.kr/fsdpApi/rest/v1/ems-incidents?page=1&size=3&sort=dsptYmd,ascx
-    # https://www.bigdata-119.kr/fsdpApi/rest/v1/ems-incidents?page=1&size=3&dsptYmd=20250609

@@ -15,7 +15,6 @@ def get_forest_fire_sigu_code(sigungu_full_name: str) -> str | None:
     """'청주시 상당구' 같은 일반구 이름이면 상위 'OO시' 코드로 폴백"""
     code = _SIGUNGU_NAME_TO_CODE5.get(sigungu_full_name)
     if code:
-        # 일반구 코드로 조회했는데 forest_fire_risks에 없을 수 있으니, 상위 시 이름도 준비해둠
         return code
     if " " in sigungu_full_name:
         city_name = sigungu_full_name.split(" ")[0]
@@ -39,7 +38,6 @@ def allocate_forest_fire_risk_to_jurisdictions(db: Session) -> dict:
         risk = risk_by_code.get(code) if code else None
 
         if not risk and " " in sigungu:
-            # 일반구 코드로 못 찾으면 상위 시 이름으로 재시도
             city_name = sigungu.split(" ")[0]
             city_code = _SIGUNGU_NAME_TO_CODE5.get(city_name)
             risk = risk_by_code.get(city_code) if city_code else None
@@ -69,7 +67,7 @@ def fetch_forest_fire_risk_preview(num_of_rows: int = 5) -> dict:
 
 def parse_forest_fire_risk(raw: dict) -> list[dict]:
     items = raw.get("response", {}).get("body", {}).get("items", {}).get("item", [])
-    if isinstance(items, dict):  # 결과가 1건이면 dict로 오는 경우 방지
+    if isinstance(items, dict):
         items = [items]
     return items
 

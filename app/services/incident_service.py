@@ -46,6 +46,8 @@ def find_nearest_safety_center(db: Session, station_id: int, lat: float, lon: fl
         )
         if not jurisdiction:
             continue
+        if not jurisdiction.geometry or not jurisdiction.geometry.get("coordinates"):
+            continue  # geometry 누락/빈 값 — 거리 계산 불가하니 후보에서 제외 (500 방지)
         centroid = shape(jurisdiction.geometry).centroid
         distance = haversine_distance(lat, lon, centroid.y, centroid.x)
         candidates.append((center, distance))
@@ -65,8 +67,9 @@ def simulate_incident(
     latitude: float | None = None,
     longitude: float | None = None,
     description: str | None = None,
+    fire_truck_count: int = 0,
+    ambulance_count: int = 0,
 ) -> tuple[Incident, Notification]:
-    """값을 직접 주면 그 값을 쓰고, 안 주면 랜덤 생성 (데모/대회용)."""
     incident_type = incident_type or random.choice(list(IncidentType))
     dong_name = dong_name or random.choice(DONG_POOL)
     address = address or f"충북 청주시 {dong_name} 일대"
@@ -91,6 +94,8 @@ def simulate_incident(
         longitude=str(longitude) if longitude is not None else None,
         description=description,
         is_simulated="Y",
+        fire_truck_count=fire_truck_count,
+        ambulance_count=ambulance_count,
     )
     db.add(incident)
     db.flush()

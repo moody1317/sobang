@@ -1,4 +1,3 @@
-# app/scripts/rematch_jurisdictions.py
 from app.core.database import SessionLocal
 from app.services.jurisdiction_service import rematch_unmatched_jurisdictions
 

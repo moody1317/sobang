@@ -1,4 +1,3 @@
-# app/services/weather_warning_service.py
 import json
 import requests
 from pathlib import Path
@@ -71,17 +70,15 @@ def fetch_pwn_cd(stn_id: str, page_no: int = 1, num_of_rows: int = 300, area_cod
     response.raise_for_status()
     return response.json()
 
-# app/services/weather_warning_service.py
 def sync_weather_warnings(db: Session) -> dict:
     result = fetch_pwn_cd(stn_id="108")
     items = result.get("response", {}).get("body", {}).get("items", {}).get("item", [])
 
-    # 이번 sync 이전에 이미 활성 상태였던 (시군구, 특보종류) 조합
     already_active_pairs = {
         (w.sigungu_name, w.warn_var)
         for w in db.query(WeatherWarning).filter(WeatherWarning.is_active == True).all()
     }
-    notified_this_run = set()  # 이번 실행 안에서 이미 알림 보낸 조합
+    notified_this_run = set()  
 
     created, newly_issued, newly_cancelled = 0, 0, 0
 
@@ -131,7 +128,6 @@ def sync_weather_warnings(db: Session) -> dict:
             ))
             created += 1
 
-            # 이미 같은 시군구+특보종류로 활성 중이었거나, 이번 실행에서 이미 알림 보냈으면 스킵
             if pair not in already_active_pairs and pair not in notified_this_run:
                 notified_this_run.add(pair)
                 newly_issued += 1
@@ -145,7 +141,7 @@ def sync_weather_warnings(db: Session) -> dict:
     db.commit()
     return {"created": created, "newly_issued": newly_issued, "newly_cancelled": newly_cancelled}
 
-WEATHER_DECAY_HOURS = 24  # 해제 후 24시간이면 영향 소멸 — 지진(72h)보다 짧게 잡음(기상 영향은 더 빨리 사라짐)
+WEATHER_DECAY_HOURS = 24  # 해제 후 24시간이면 영향 소멸
 
 def get_weather_warning_weight(warning: WeatherWarning, now: datetime = None) -> float:
     now = now or datetime.now()

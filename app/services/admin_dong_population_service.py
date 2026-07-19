@@ -73,8 +73,7 @@ def upsert_admin_dong_population(db: Session, item: dict):
         db.add(AdminDongPopulation(**values))
 
 def sync_admin_dong_population(db: Session, srch_fr_ym: str, srch_to_ym: str) -> dict:
-    """법정동 인구 sync와 동일한 패턴 — 272개 시군구 순회, lv=3(읍면동 단위)"""
-    total_created, total_updated = 0, 0
+    total_created = 0
     failed = []
 
     for entry in SIGUNGU_CODES:

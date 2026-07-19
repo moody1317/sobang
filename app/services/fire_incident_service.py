@@ -12,7 +12,7 @@ FIRE_INCIDENTS_URL = "https://www.bigdata-119.kr/fsdpApi/rest/v1/fire-incidents"
 def fetch_fire_incidents_raw(page: int = 1, size: int = 20, q: str = None, sort: str = None, rcpt_dt_prefix: str = None) -> dict:
     url = f"{FIRE_INCIDENTS_URL}?page={page}&size={size}"
     if q:
-        url += f"&q={quote(q)}"          # URL 인코딩 추가
+        url += f"&q={quote(q)}"
     if sort:
         url += f"&sort={quote(sort)}"
     if rcpt_dt_prefix:
@@ -54,7 +54,6 @@ def build_center_name_map(db: Session) -> dict:
     return {normalize_name(c.station_name): c.id for c in centers}
 
 def get_season_from_dt(dt_str: str) -> str | None:
-    """YYYYMMDDHHMMSS 형식 문자열에서 월을 뽑아 계절 반환"""
     if not dt_str or len(dt_str) < 6:
         return None
     month = int(dt_str[4:6])

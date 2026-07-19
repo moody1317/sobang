@@ -17,7 +17,6 @@ import app.api.v1.navigation as navigation
 
 from app.api.v1 import notifications
 
-from app.api.v1 import incident
 from app.api.v1 import weather
 from app.api.v1 import inspection
 from app.api.v1 import jurisdiction
@@ -51,7 +50,6 @@ app.include_router(admin.router, prefix="/api/v1")
 app.include_router(stations.router, prefix="/api/v1")
 app.include_router(incidents.router, prefix="/api/v1")
 app.include_router(notifications.router, prefix="/api/v1")
-app.include_router(incident.router, prefix="/api/v1")
 app.include_router(weather.router, prefix="/api/v1")
 app.include_router(inspection.router, prefix="/api/v1")
 app.include_router(jurisdiction.router, prefix="/api/v1")

@@ -98,7 +98,7 @@ def sync_fire_targets(db: Session) -> dict:
             else:
                 updated += 1
 
-        db.commit()   # 화재 때 배운 교훈 — 페이지마다 커밋해서 중간에 끊겨도 안전하게
+        db.commit() 
         print(f"page {page} 완료 — 누적 생성 {created}, 갱신 {updated}")
         
         if not result.get("hasNext"):

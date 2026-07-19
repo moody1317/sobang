@@ -1,4 +1,3 @@
-# app/scripts/sync_fire_incidents.py
 from app.core.database import SessionLocal
 from app.services.fire_incident_service import sync_fire_incidents
 

@@ -1,4 +1,3 @@
-import json
 from app.services.ems_incident_service import fetch_ems_incidents_raw
 
 if __name__ == "__main__":

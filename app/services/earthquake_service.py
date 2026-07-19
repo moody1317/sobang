@@ -30,7 +30,7 @@ def fetch_earthquakes_raw(page_no: int = 1, num_of_rows: int = 10, from_tm_fc: s
 
     response = requests.get(settings.EARTHQUAKE_API_BASE_URL, params=params, timeout=10)
     print("상태코드:", response.status_code)
-    print("응답 본문:", response.text[:1000])   # 먼저 본문 확인
+    print("응답 본문:", response.text[:1000])
     response.raise_for_status()
     return response.json()
 
@@ -54,7 +54,6 @@ def get_affected_radius_km(magnitude: float) -> float:
         return 100
     
 def parse_tm(tm_str: str) -> datetime:
-    """지진 API의 시각 문자열(YYYYMMDDHHMMSS)을 datetime으로 변환"""
     return datetime.strptime(str(tm_str), "%Y%m%d%H%M%S")
 
 def register_earthquake_event(db: Session, eqk_data: dict):
@@ -98,7 +97,6 @@ def is_domestic_earthquake(eqk_data: dict) -> bool:
     return 33.0 <= lat <= 43.0 and 124.0 <= lon <= 132.0
 
 def get_earthquake_boost_for_jurisdiction(db: Session, jurisdiction, now: datetime = None) -> float:
-    """활성 지진 이벤트들의 공간·시간 감쇄 가산점을 관할구역 centroid 기준으로 합산 (위험 스코어 지진 축용)"""
     now = now or datetime.now()
     if not jurisdiction.geometry:
         return 0.0

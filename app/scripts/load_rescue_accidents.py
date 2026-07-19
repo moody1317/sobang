@@ -1,4 +1,3 @@
-# app/scripts/load_rescue_accidents.py
 import pandas as pd
 from datetime import datetime
 from app.core.database import SessionLocal

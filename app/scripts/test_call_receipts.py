@@ -1,4 +1,3 @@
-# app/scripts/test_call_receipts.py
 from app.services.call_receipt_service import fetch_call_receipts_raw
 
 if __name__ == "__main__":

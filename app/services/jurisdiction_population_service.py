@@ -29,19 +29,16 @@ with open(SIGUNGU_CODES_PATH, encoding="utf-8") as f:
 
 def extract_sigungu(address: str, fallback_name: str = "") -> str:
     if address:
-        # 1순위: 주소에 시군구명이 직접 들어있는 경우
         for name in _SIGUNGU_NAMES:
             if name in address:
                 return name
 
-        # 2순위: 주소 괄호 안 동명으로 역산 (예: "... (본리동)")
         match = re.search(r"\(([가-힣]+동)\)", address)
         if match:
             dong = match.group(1)
             if dong in _DONG_TO_SIGUNGU:
                 return _DONG_TO_SIGUNGU[dong]
 
-    # 3순위: 안전센터/소방서 이름을 동명으로 추정 (예: "정왕119안전센터" → "정왕")
     if fallback_name:
         candidate = normalize_name(fallback_name)
         for dong, sigungu in _DONG_TO_SIGUNGU.items():
@@ -131,11 +128,9 @@ def allocate_population_to_jurisdictions(db: Session, std_ym: str) -> dict:
             avg_female = sum(j.allocated_female_ppltn for j, _ in entries) / len(entries)
             avg_elderly = sum(j.allocated_elderly_ppltn for j, _ in entries) / len(entries)
         elif entries:
-            # 그 시군구 안에 폴리곤 있는 곳이 하나도 없으면, 시군구 전체를 균등 나눔
             n = len(entries) or 1
             avg_ppltn, avg_female, avg_elderly = total_ppltn / n, total_female / n, total_elderly / n
 
-        # 폴리곤 없는 관할구역: 같은 시군구 평균값으로 근사치 부여
         for jurisdiction in no_geometry_jurisdictions.get(sigungu, []):
             jurisdiction.allocated_total_ppltn = round(avg_ppltn)
             jurisdiction.allocated_female_ppltn = round(avg_female)

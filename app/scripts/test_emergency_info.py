@@ -1,4 +1,3 @@
-# app/scripts/discover_sejong.py
 from app.services.emergency_info_service import fetch_emg_patient_transfer_info
 
 PROBE_STATIONS = ["세종남부소방서", "세종북부소방서", "세종소방서", "조치원소방서"]

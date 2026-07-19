@@ -4,7 +4,6 @@ from app.core.config import settings
 KAKAO_DIRECTIONS_URL = "https://apis-navi.kakaomobility.com/v1/directions"
 
 def fetch_route(origin_lat: float, origin_lng: float, dest_lat: float, dest_lng: float) -> dict:
-    """카카오모빌리티 길찾기 API로 도로 기반 경로를 가져온다."""
     headers = {"Authorization": f"KakaoAK {settings.KAKAO_REST_API_KEY}"}
     params = {
         "origin": f"{origin_lng},{origin_lat}",

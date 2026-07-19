@@ -1,5 +1,3 @@
-# app/scripts/test_admin_dong_population.py
-import json
 from app.services.admin_dong_population_service import fetch_admin_dong_population_preview
 
 if __name__ == "__main__":

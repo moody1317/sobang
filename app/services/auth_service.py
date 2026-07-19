@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import create_access_token, generate_temp_password, hash_password, verify_password, check_brute_force, record_failed_attempt, clear_attempts
 from app.models.user import User, UnitType
-from app.schemas.user import UserCreate, ProfileUpdateRequest
+from app.schemas.user import UserCreate, ProfileUpdateRequest, UserUnitUpdateRequest
 
 from app.models.station import Station
 from app.models.safety_center import SafetyCenter

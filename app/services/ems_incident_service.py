@@ -20,9 +20,9 @@ def fetch_ems_incidents_raw(page: int = 1, size: int = 20, dspt_ymd_prefix: str 
     result = subprocess.run(
         [
             "curl", "-s", "-S",
-            "--retry", "5",              # 실패 시 최대 5번 자동 재시도
-            "--retry-delay", "3",        # 재시도 간격 3초
-            "--retry-all-errors",        # 이번처럼 recv 에러 등도 재시도 대상에 포함
+            "--retry", "5",
+            "--retry-delay", "3",
+            "--retry-all-errors",
             "-X", "POST", url,
             "-H", f"X-API-KEY: {settings.EMS_API_KEY}",
         ],
@@ -38,8 +38,6 @@ def fetch_ems_incidents_raw(page: int = 1, size: int = 20, dspt_ymd_prefix: str 
 
 def fetch_ems_incidents_preview(page: int = 1, size: int = 3) -> dict:
     return fetch_ems_incidents_raw(page=page, size=size)
-
-# app/services/ems_incident_service.py
 
 def sync_ems_incidents(db: Session, start_ymd: str = "20250101", end_ymd: str = "20260630") -> dict:
     center_map = build_center_name_map(db)
@@ -97,8 +95,8 @@ def upsert_ems_incident(db: Session, item: dict, center_map: dict):
 
     existing = db.query(EmsIncident).filter(EmsIncident.rlf_rptp_no == rlf_rptp_no).first()
     if existing:
-        return  # 화재와 동일하게 재수집 시 중복 스킵
-
+        return 
+    
     center_id = center_map.get(normalize_name(item.get("cntrNm") or ""))
 
     db.add(EmsIncident(

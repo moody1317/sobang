@@ -47,14 +47,12 @@ def fetch_emg_patient_transfer_info(
 
 
 def extract_short_station_name(full_name: str) -> str:
-    """'청주동부소방서' → '동부소방서' (지역 접두어 제거)"""
     for direction in ["동부", "서부", "남부", "북부", "중부"]:
         if direction in full_name and full_name.endswith("소방서"):
             return direction + "소방서"
     return full_name
 
 def get_recent_ems_months(count: int = 3) -> list[str]:
-    """최신 공개월(LATEST_EMS_STAT_MONTH) 기준 최근 N개월"""
     year = int(LATEST_EMS_STAT_MONTH[:4])
     month = int(LATEST_EMS_STAT_MONTH[4:6])
 
@@ -68,7 +66,6 @@ def get_recent_ems_months(count: int = 3) -> list[str]:
     return months
 
 def get_ems_hourly_buckets(station_name: str, sido_full_name: str) -> dict:
-    """구급 시간대별 분포 조회 (실패해도 조용히 빈 값 반환 — 통계 페이지 전체가 죽지 않도록)"""
     short_name = extract_short_station_name(station_name)
     sido_name = SIDO_ABBR_MAP.get(sido_full_name)
 

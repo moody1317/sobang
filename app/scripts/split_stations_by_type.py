@@ -1,4 +1,3 @@
-# app/scripts/split_stations_by_type.py
 import re
 from app.core.database import SessionLocal
 from app.models.station import Station

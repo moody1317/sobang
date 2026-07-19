@@ -1,0 +1,15 @@
+diff --git a/app/api/v1/incident.py b/app/api/v1/incident.py
+index 5a7828c..b5d63bd 100644
+--- a/app/api/v1/incident.py
++++ b/app/api/v1/incident.py
+@@ -97,6 +97,10 @@ def list_active_incidents(db: Session = Depends(get_db_session)):
+             "station_id": i.station_id,
+             "safety_center_id": i.safety_center_id,
+             "dong_name": i.dong_name,
++            "address": i.address,
++            "latitude": float(i.latitude) if i.latitude is not None else None,
++            "longitude": float(i.longitude) if i.longitude is not None else None,
++            "description": i.description,
+             "reported_at": i.reported_at.isoformat(),
+         }
+         for i in items

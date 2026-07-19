@@ -1,4 +1,3 @@
-# app/scripts/rematch_fire_centers.py
 from app.core.database import SessionLocal
 from app.models.fire_incident import FireIncident
 from app.models.safety_center import SafetyCenter

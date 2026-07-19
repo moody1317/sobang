@@ -1,4 +1,3 @@
-# app/scripts/sync_population.py
 from app.core.database import SessionLocal
 from app.services.population_service import sync_all_population
 

@@ -5,7 +5,6 @@ from app.core.config import settings
 
 CALL_RECEIPTS_URL = "https://www.bigdata-119.kr/fsdpApi/rest/v1/call-receipts"
 
-
 def fetch_call_receipts_raw(page: int = 1, size: int = 20, q: str = None, sort: str = None) -> dict:
     url = f"{CALL_RECEIPTS_URL}?page={page}&size={size}"
     if q:

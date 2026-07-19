@@ -1,4 +1,5 @@
 from datetime import datetime
+from sqlalchemy import extract
 from sqlalchemy.orm import Session
 
 from app.models.incident import Incident, IncidentStatus
@@ -63,6 +64,18 @@ def confirm_dispatch(db: Session, incident: Incident, user: User) -> IncidentDis
     db.commit()
     db.refresh(dispatch)
     return dispatch
+
+def get_dispatch_dates(db: Session, user_id: int, year: int, month: int) -> list:
+    rows = (
+        db.query(IncidentDispatch.dispatched_at)
+        .filter(
+            IncidentDispatch.user_id == user_id,
+            extract("year", IncidentDispatch.dispatched_at) == year,
+            extract("month", IncidentDispatch.dispatched_at) == month,
+        )
+        .all()
+    )
+    return sorted({dispatched_at.date() for (dispatched_at,) in rows})
 
 def complete_return(db: Session, incident: Incident, user: User, activity_note: str, equipment_used: str | None) -> IncidentDispatch:
     dispatch = (

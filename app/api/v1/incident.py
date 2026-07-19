@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from datetime import datetime
 
@@ -164,6 +164,17 @@ def list_incident_dispatches(incident_id: int, db: Session = Depends(get_db_sess
         }
         for dispatch, user in rows
     ]
+
+@router.get("/dispatches/my")
+def list_my_dispatch_dates(
+    year: int = Query(...),
+    month: int = Query(..., ge=1, le=12),
+    db: Session = Depends(get_db_session),
+    current_user: User = Depends(get_current_active_user),
+):
+    """일정 페이지 달력에 출동 표시를 하기 위한, 이번 달 본인 출동 날짜 목록"""
+    dates = incident_dispatch_service.get_dispatch_dates(db, current_user.id, year, month)
+    return [d.isoformat() for d in dates]
 
 @router.patch("/{incident_id}/dispatch/return")
 def return_from_dispatch(

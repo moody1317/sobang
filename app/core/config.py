@@ -43,6 +43,9 @@ class Settings(BaseSettings):
 
     KAKAO_REST_API_KEY: str 
 
+    HAZMAT_FACILITY_API_KEY: str
+    HAZMAT_FACILITY_API_BASE_URL: str = "https://safemap.go.kr/openapi2/IF_0049"
+
     @property
     def DATABASE_URL(self) -> str:
         return (

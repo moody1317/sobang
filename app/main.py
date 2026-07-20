@@ -32,6 +32,7 @@ from app.api.v1 import jurisdiction
 from app.api.v1 import work_schedule
 from app.api.v1 import statistics
 from app.api.v1 import risk_map
+from app.api.v1 import hazmat_facility
 
 app = FastAPI(
     title="Sobang Backend",
@@ -107,3 +108,4 @@ app.include_router(work_schedule.router, prefix="/api/v1")
 app.include_router(statistics.router, prefix="/api/v1")
 app.include_router(navigation.router, prefix="/api/v1")
 app.include_router(risk_map.router, prefix="/api/v1")
+app.include_router(hazmat_facility.router, prefix="/api/v1")

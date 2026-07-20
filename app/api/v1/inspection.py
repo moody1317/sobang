@@ -9,6 +9,7 @@ from app.models.user import User
 from app.models.jurisdiction import Jurisdiction
 from app.models.work_schedule import WorkSchedule, ShiftType
 from app.schemas.inspection import InspectionCreate, InspectionCompleteRequest, InspectionResponse
+from app.services.jurisdiction_population_service import get_my_jurisdictions
 
 router = APIRouter(prefix="/inspections", tags=["inspections"])
 
@@ -66,8 +67,10 @@ def create_inspection(
 def list_inspections(
     status: InspectionStatus = None,
     db: Session = Depends(get_db_session),
+    current_user: User = Depends(get_current_active_user),
 ):
-    query = db.query(Inspection)
+    jurisdiction_ids = [j.id for j in get_my_jurisdictions(db, current_user)]
+    query = db.query(Inspection).filter(Inspection.jurisdiction_id.in_(jurisdiction_ids))
     if status:
         query = query.filter(Inspection.status == status)
     items = query.order_by(desc(Inspection.scheduled_date)).all()

@@ -20,8 +20,11 @@ with open(WEATHER_HIERARCHY_PATH, encoding="utf-8") as f:
 
 WARNING_TYPE_MAP = {
     1: "강풍", 2: "호우", 3: "한파", 4: "건조", 5: "폭풍해일",
-    6: "풍랑", 7: "태풍", 8: "대설", 9: "황사", 12: "폭염",
+    6: "풍랑", 7: "태풍", 8: "대설", 9: "황사", 12: "폭염", 13: "열대야",
 }
+
+def warning_type_label(warn_var) -> str:
+    return WARNING_TYPE_MAP.get(warn_var, f"코드{warn_var}")
 
 WARNING_IMPACT = {
     "화재": [1, 4, 7],
@@ -107,7 +110,7 @@ def sync_weather_warnings(db: Session) -> dict:
                     create_notification(
                         db, level=NotificationLevel.SAFE, source="weather",
                         title=sigungu or item.get("areaName"),
-                        message=f"{WARNING_TYPE_MAP.get(warn_var)}특보 해제",
+                        message=f"{warning_type_label(warn_var)}특보 해제",
                         station_id=None,
                     )
             continue
@@ -134,7 +137,7 @@ def sync_weather_warnings(db: Session) -> dict:
                 create_notification(
                     db, level=NotificationLevel.ALERT, source="weather",
                     title=sigungu or item.get("areaName"),
-                    message=f"{WARNING_TYPE_MAP.get(warn_var)}특보 발효",
+                    message=f"{warning_type_label(warn_var)}특보 발효",
                     station_id=None,
                 )
 

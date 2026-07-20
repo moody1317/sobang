@@ -103,7 +103,7 @@ def delete_existing_user(
         name = delete_user(db, firefighter_number)
         return {"message": f"{name}님의 계정이 삭제되었습니다."}
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.patch("/users/{user_id}", response_model=UserResponse)
 def update_user(

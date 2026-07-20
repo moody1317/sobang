@@ -1,12 +1,13 @@
 import re
 import unicodedata
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from app.models.jurisdiction import Jurisdiction
 from app.models.jurisdiction_dong import JurisdictionDong
 from app.models.admin_dong_boundary import AdminDongBoundary
+from app.models.risk_score_snapshot import RiskScoreSnapshot
 from app.models.admin_dong_population import AdminDongPopulation
 from app.models.fire_incident import FireIncident
 from app.models.ems_incident import EmsIncident
@@ -402,3 +403,39 @@ def allocate_risk_score_to_dongs(db: Session) -> dict:
 
     db.commit()
     return {"updated": updated, "skipped": skipped, "std_ym": std_ym}
+
+
+def snapshot_dong_risk_scores(db: Session) -> dict:
+    today = datetime.now().date()
+    boundaries = db.query(AdminDongBoundary).filter(AdminDongBoundary.risk_score.isnot(None)).all()
+
+    existing_codes = {
+        s.admin_code
+        for s in db.query(RiskScoreSnapshot).filter(RiskScoreSnapshot.snapshot_date == today).all()
+    }
+
+    created = 0
+    for b in boundaries:
+        if b.admin_code in existing_codes:
+            continue
+        db.add(RiskScoreSnapshot(
+            admin_code=b.admin_code,
+            sigungu_nm=b.sigungu_nm,
+            dong_nm=b.dong_nm,
+            risk_score=b.risk_score,
+            snapshot_date=today,
+        ))
+        created += 1
+
+    db.commit()
+    return {"created": created, "skipped": len(boundaries) - created}
+
+
+def get_dong_risk_history(db: Session, admin_code: str, weeks: int = 8) -> list[RiskScoreSnapshot]:
+    since = datetime.now().date() - timedelta(weeks=weeks)
+    return (
+        db.query(RiskScoreSnapshot)
+        .filter(RiskScoreSnapshot.admin_code == admin_code, RiskScoreSnapshot.snapshot_date >= since)
+        .order_by(RiskScoreSnapshot.snapshot_date.asc())
+        .all()
+    )

@@ -1,3 +1,4 @@
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.security import create_access_token, generate_temp_password, hash_password, verify_password, check_brute_force, record_failed_attempt, clear_attempts
@@ -171,7 +172,11 @@ def delete_user(db: Session, firefighter_number: str) -> str:
 
     name = user.name
     db.delete(user)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise ValueError("이 대원과 연결된 기록(근무일정/출동이력/점검이력/휴직기록 등)이 있어 삭제할 수 없습니다.")
 
     return name
 

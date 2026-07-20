@@ -49,7 +49,7 @@ function Login() {
             <input
               type="text"
               className="form-input"
-              placeholder="cjsd0123"
+              placeholder="대원번호를 입력하세요."
               value={firefighterNumber}
               onChange={(e) => setFirefighterNumber(e.target.value)}
             />

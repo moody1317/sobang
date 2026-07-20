@@ -1,12 +1,13 @@
 import { useState, useCallback } from 'react';
 import { getUnreadNotificationCount } from '../../../api/notifications';
+import { isLoggedIn } from '../../../api/auth';
 import { AlertContext } from './alertContextValue';
 
 export function AlertProvider({ children }) {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const refreshUnreadCount = useCallback(async () => {
-    if (!localStorage.getItem('access_token')) return;
+    if (!isLoggedIn()) return;
     try {
       const data = await getUnreadNotificationCount();
       setUnreadCount(data.unread_count);

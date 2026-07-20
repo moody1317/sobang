@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import PatrolLayout from '../layouts/patrollayout';
-import { completeReturn, updateIncidentStatus } from '../../../api/incidents';
+import { completeReturn } from '../../../api/incidents';
 import './return.css';
 
 const INCIDENT_ICON = {
@@ -42,8 +42,8 @@ function PatrolReturn() {
       await completeReturn(incident.id, {
         activity_note: activityNote.trim(),
         equipment_used: equipmentUsed.trim() || undefined,
+        reported_false_alarm: isFalseAlarm,
       });
-      await updateIncidentStatus(incident.id, '종료', isFalseAlarm);
       navigate('/firefighter_patrol');
     } catch (err) {
       setError(err.response?.data?.detail || '복귀 처리에 실패했습니다.');
@@ -103,6 +103,9 @@ function PatrolReturn() {
         <button className="patrol-return-btn" onClick={handleSubmit} disabled={loading}>
           {loading ? '처리 중…' : '복귀 완료'}
         </button>
+        <p className="patrol-return-note">
+          같이 출동한 인원이 더 있다면, 전원이 복귀 처리해야 신고가 종료됩니다.
+        </p>
       </div>
     </PatrolLayout>
   );

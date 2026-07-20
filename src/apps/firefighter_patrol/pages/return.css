@@ -138,3 +138,10 @@
   opacity: 0.6;
   cursor: default;
 }
+
+.patrol-return-note {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-align: center;
+  margin: 0;
+}

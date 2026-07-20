@@ -6,9 +6,9 @@ export async function login(firefighterNumber, password) {
         password: password,
     });
 
-    const { access_token, must_change_password } = response.data;
+    const { must_change_password } = response.data;
 
-    localStorage.setItem("access_token", access_token);
+    localStorage.setItem("is_logged_in", "true");
     localStorage.setItem("must_change_password", must_change_password);
 
     return response.data;
@@ -26,7 +26,8 @@ export async function changePassword(currentPassword, newPassword) {
 }
 
 export function logout() {
-    localStorage.removeItem("access_token");
+    client.post("/auth/logout").catch(() => {});
+    localStorage.removeItem("is_logged_in");
     localStorage.removeItem("must_change_password");
 }
 
@@ -35,7 +36,7 @@ export function getMustChangePassword() {
 }
 
 export function isLoggedIn() {
-    return !!localStorage.getItem("access_token");
+    return localStorage.getItem("is_logged_in") === "true";
 }
 
 export async function getMe() {
@@ -70,5 +71,25 @@ export async function getUnits(unitType) {
 
 export async function resetUserPassword(firefighterNumber) {
     const response = await client.post(`/admin/users/${firefighterNumber}/reset-password`);
+    return response.data;
+}
+
+export async function deleteUser(firefighterNumber) {
+    const response = await client.delete(`/admin/users/${firefighterNumber}`);
+    return response.data;
+}
+
+export async function getUserLeaves(userId) {
+    const response = await client.get(`/admin/users/${userId}/leave`);
+    return response.data;
+}
+
+export async function startUserLeave(userId, data) {
+    const response = await client.post(`/admin/users/${userId}/leave`, data);
+    return response.data;
+}
+
+export async function endUserLeave(userId, data) {
+    const response = await client.patch(`/admin/users/${userId}/leave/return`, data);
     return response.data;
 }

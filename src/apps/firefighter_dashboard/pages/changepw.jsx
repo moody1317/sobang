@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/authlayout';
 import { changePassword } from '../../../api/auth';
+import { useRefreshUser } from '../contexts/userHooks';
 import './login.css';
 
 function ChangePassword() {
@@ -11,6 +12,7 @@ function ChangePassword() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const refreshUser = useRefreshUser();
 
   function set(key) {
     return (e) => {
@@ -35,6 +37,7 @@ function ChangePassword() {
     setLoading(true);
     try {
       await changePassword(form.current, form.next);
+      await refreshUser();
       navigate('/dashboard');
     } catch (err) {
       setErrors({ general: err.response?.data?.detail || '비밀번호 변경에 실패했습니다.' });

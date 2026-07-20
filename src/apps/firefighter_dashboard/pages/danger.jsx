@@ -3,9 +3,13 @@ import { useLocation } from 'react-router-dom';
 import DashboardLayout from '../layouts/dashboardlayout';
 import InspectionAddModal from './inspectionAdd';
 import { loadKakaoMap } from '../../firefighter_patrol/utils/loadKakaoMap';
-import { getRiskMapDongs } from '../../../api/riskMap';
+import { getRiskMapDongs, getDongRiskHistory } from '../../../api/riskMap';
+import { getActiveIncidents } from '../../../api/incidents';
 import { LEVEL_CLASS, LEVEL_BY_KEY, BREAKDOWN_LABELS, resolveLevel } from '../utils/riskScore';
 import './danger.css';
+
+const ACTIVE_INCIDENT_POLL_MS = 20000;
+const PULSE_INTERVAL_MS = 800;
 
 function dongToRegion(dong, levelKey, rank, total) {
   return {
@@ -20,7 +24,69 @@ function dongToRegion(dong, levelKey, rank, total) {
   };
 }
 
-function RegionPanel({ region }) {
+function computeWeeklyDelta(history) {
+  if (history.length < 2) return null;
+  const latest = history[history.length - 1];
+  const latestDate = new Date(latest.snapshot_date);
+
+  let closest = null;
+  let closestDiff = Infinity;
+  for (const h of history) {
+    const daysAgo = (latestDate - new Date(h.snapshot_date)) / (1000 * 60 * 60 * 24);
+    if (daysAgo < 1) continue;
+    const diff = Math.abs(daysAgo - 7);
+    if (diff < closestDiff) {
+      closestDiff = diff;
+      closest = h;
+    }
+  }
+  if (!closest) return null;
+  return Math.round((latest.risk_score - closest.risk_score) * 10) / 10;
+}
+
+function Sparkline({ points }) {
+  const width = 280;
+  const height = 56;
+  const scores = points.map((p) => p.risk_score);
+  const min = Math.min(...scores);
+  const max = Math.max(...scores);
+  const range = max - min || 1;
+  const stepX = points.length > 1 ? width / (points.length - 1) : 0;
+
+  const coords = points.map((p, i) => {
+    const x = i * stepX;
+    const y = height - ((p.risk_score - min) / range) * height;
+    return `${x},${y}`;
+  });
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} className="danger-trend-svg" preserveAspectRatio="none">
+      <polyline points={coords.join(' ')} className="danger-trend-line" />
+    </svg>
+  );
+}
+
+function TrendCard({ region, history, historyStatus }) {
+  if (!region) return null;
+
+  return (
+    <div className="danger-trend-card">
+      <div className="danger-trend-header">
+        <span className="danger-trend-title">{region.name} 위험도 추이</span>
+        <span className="danger-trend-sub">최근 8주</span>
+      </div>
+      {historyStatus === 'loading' && (
+        <div className="danger-trend-placeholder">불러오는 중…</div>
+      )}
+      {historyStatus === 'ready' && history.length < 2 && (
+        <div className="danger-trend-placeholder">추이 데이터를 쌓는 중입니다. 며칠 후부터 표시됩니다.</div>
+      )}
+      {historyStatus === 'ready' && history.length >= 2 && <Sparkline points={history} />}
+    </div>
+  );
+}
+
+function RegionPanel({ region, weeklyDelta }) {
   const [showModal, setShowModal] = useState(false);
   const levelCls = LEVEL_CLASS[region.level] ?? 'safe';
 
@@ -47,6 +113,13 @@ function RegionPanel({ region }) {
           <span className="danger-rank-value">{region.rank}위 / {region.total}개 구역</span>
         </div>
       </div>
+
+      {weeklyDelta !== null && weeklyDelta !== undefined && (
+        <div className={`danger-delta danger-delta--${weeklyDelta > 0 ? 'up' : weeklyDelta < 0 ? 'down' : 'flat'}`}>
+          <i className={`bi bi-arrow-${weeklyDelta > 0 ? 'up' : weeklyDelta < 0 ? 'down' : 'right'}-short`} />
+          지난주 대비 {weeklyDelta > 0 ? '+' : ''}{weeklyDelta}
+        </div>
+      )}
 
       <div className="danger-divider" />
 
@@ -78,12 +151,20 @@ function DangerMap() {
   const [dongs, setDongs] = useState([]);
   const [status, setStatus] = useState('loading'); // loading | ready | error
   const [selectedAdminCode, setSelectedAdminCode] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [historyStatus, setHistoryStatus] = useState('idle'); // idle | loading | ready | error
 
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const polygonsByAdminCodeRef = useRef({});
   const boundsByAdminCodeRef = useRef({});
   const latestSelectedRef = useRef(null);
+
+  const [activeIncidentDongNames, setActiveIncidentDongNames] = useState(new Set());
+  const fillColorByLevelRef = useRef({});
+  const alertColorRef = useRef('');
+  const activeIncidentAdminCodesRef = useRef(new Set());
+  const pulseOnRef = useRef(false);
 
   useEffect(() => {
     latestSelectedRef.current = selectedAdminCode;
@@ -131,6 +212,8 @@ function DangerMap() {
     return dongToRegion(dong, resolveLevel(Number(dong.risk_score)), rank, dongs.length);
   }, [selectedAdminCode, dongs, rankedByScore]);
 
+  const weeklyDelta = useMemo(() => computeWeeklyDelta(history), [history]);
+
   const focusOnDong = (adminCode) => {
     const map = mapRef.current;
     if (!map) return;
@@ -172,6 +255,8 @@ function DangerMap() {
         caution: style.getPropertyValue('--color-risk-caution').trim(),
         danger: style.getPropertyValue('--color-risk-danger').trim(),
       };
+      fillColorByLevelRef.current = fillColorByLevel;
+      alertColorRef.current = style.getPropertyValue('--color-brand').trim();
 
       const bounds = new kakao.maps.LatLngBounds();
       polygonsByAdminCodeRef.current = {};
@@ -235,43 +320,153 @@ function DangerMap() {
     focusOnDong(selectedAdminCode);
   }, [selectedAdminCode]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!selectedAdminCode) {
+      Promise.resolve().then(() => {
+        if (cancelled) return;
+        setHistory([]);
+        setHistoryStatus('idle');
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    Promise.resolve().then(() => { if (!cancelled) setHistoryStatus('loading'); });
+
+    getDongRiskHistory(selectedAdminCode)
+      .then((data) => {
+        if (cancelled) return;
+        setHistory(data);
+        setHistoryStatus('ready');
+      })
+      .catch(() => {
+        if (!cancelled) setHistoryStatus('error');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedAdminCode]);
+
+  // 신고 접수부터 종료까지, 해당 동에 활성 신고가 있는지 주기적으로 확인
+  useEffect(() => {
+    if (status !== 'ready') return;
+    let cancelled = false;
+
+    function poll() {
+      getActiveIncidents()
+        .then((incidents) => {
+          if (cancelled) return;
+          setActiveIncidentDongNames(new Set(incidents.map((i) => i.dong_name).filter(Boolean)));
+        })
+        .catch(() => {});
+    }
+
+    poll();
+    const timer = setInterval(poll, ACTIVE_INCIDENT_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [status]);
+
+  // 활성 신고가 사라진 동은 원래 위험도 색으로 복원
+  useEffect(() => {
+    if (status !== 'ready') return;
+
+    const nameToAdminCode = new Map(dongs.map((d) => [d.dong_nm, d.admin_code]));
+    const newActiveCodes = new Set(
+      [...activeIncidentDongNames].map((name) => nameToAdminCode.get(name)).filter(Boolean)
+    );
+
+    activeIncidentAdminCodesRef.current.forEach((code) => {
+      if (newActiveCodes.has(code)) return;
+      const dong = dongs.find((d) => d.admin_code === code);
+      if (!dong) return;
+      const level = resolveLevel(Number(dong.risk_score));
+      (polygonsByAdminCodeRef.current[code] || []).forEach((polygon) => {
+        polygon.setOptions({
+          fillColor: fillColorByLevelRef.current[level],
+          fillOpacity: 0.55,
+          strokeColor: '#ffffff',
+        });
+      });
+    });
+
+    activeIncidentAdminCodesRef.current = newActiveCodes;
+  }, [activeIncidentDongNames, dongs, status]);
+
+  // 활성 신고가 있는 동은 경고색으로 깜빡이는 애니메이션 표시
+  useEffect(() => {
+    if (status !== 'ready') return;
+
+    const timer = setInterval(() => {
+      pulseOnRef.current = !pulseOnRef.current;
+      activeIncidentAdminCodesRef.current.forEach((code) => {
+        const dong = dongs.find((d) => d.admin_code === code);
+        if (!dong) return;
+        const level = resolveLevel(Number(dong.risk_score));
+        const color = pulseOnRef.current ? alertColorRef.current : fillColorByLevelRef.current[level];
+        (polygonsByAdminCodeRef.current[code] || []).forEach((polygon) => {
+          polygon.setOptions({
+            fillColor: color,
+            fillOpacity: pulseOnRef.current ? 0.85 : 0.55,
+            strokeColor: alertColorRef.current,
+          });
+        });
+      });
+    }, PULSE_INTERVAL_MS);
+
+    return () => clearInterval(timer);
+  }, [status, dongs]);
+
   return (
     <div className="danger">
       <div className="danger-content">
-        <div className="danger-map-card">
-          <div className="danger-map-header">
-            <div>
-              <h3 className="danger-map-title">{headerTitle}</h3>
-              <p className="danger-map-sub">행정구역을 클릭하면 상세 근거를 확인할 수 있습니다</p>
+        <div className="danger-map-column">
+          <div className="danger-map-card">
+            <div className="danger-map-header">
+              <div>
+                <h3 className="danger-map-title">{headerTitle}</h3>
+                <p className="danger-map-sub">행정구역을 클릭하면 상세 근거를 확인할 수 있습니다</p>
+              </div>
+              <div className="danger-legend">
+                <span className="danger-legend-label">낮음</span>
+                <span className="danger-legend-dot danger-legend-dot--safe" />
+                <span className="danger-legend-dot danger-legend-dot--warning" />
+                <span className="danger-legend-dot danger-legend-dot--caution" />
+                <span className="danger-legend-dot danger-legend-dot--danger" />
+                <span className="danger-legend-label">높음</span>
+                <span className="danger-legend-divider" />
+                <span className="danger-legend-dot danger-legend-dot--active-incident" />
+                <span className="danger-legend-label">신고 접수 중</span>
+              </div>
             </div>
-            <div className="danger-legend">
-              <span className="danger-legend-label">낮음</span>
-              <span className="danger-legend-dot danger-legend-dot--safe" />
-              <span className="danger-legend-dot danger-legend-dot--warning" />
-              <span className="danger-legend-dot danger-legend-dot--caution" />
-              <span className="danger-legend-dot danger-legend-dot--danger" />
-              <span className="danger-legend-label">높음</span>
+            <div className="danger-map-body">
+              {status === 'error' && (
+                <div className="danger-map-placeholder">
+                  <i className="bi bi-exclamation-triangle" />
+                  <span>지도를 불러오지 못했습니다</span>
+                  <span className="danger-map-placeholder-sub">잠시 후 다시 시도해주세요</span>
+                </div>
+              )}
+              {status === 'loading' && (
+                <div className="danger-map-placeholder">
+                  <i className="bi bi-map" />
+                  <span>위험 스코어 지도를 불러오는 중</span>
+                </div>
+              )}
+              <div ref={mapContainerRef} className="danger-map-kakao" style={{ display: status === 'ready' ? 'block' : 'none' }} />
             </div>
           </div>
-          <div className="danger-map-body">
-            {status === 'error' && (
-              <div className="danger-map-placeholder">
-                <i className="bi bi-exclamation-triangle" />
-                <span>지도를 불러오지 못했습니다</span>
-                <span className="danger-map-placeholder-sub">잠시 후 다시 시도해주세요</span>
-              </div>
-            )}
-            {status === 'loading' && (
-              <div className="danger-map-placeholder">
-                <i className="bi bi-map" />
-                <span>위험 스코어 지도를 불러오는 중</span>
-              </div>
-            )}
-            <div ref={mapContainerRef} className="danger-map-kakao" style={{ display: status === 'ready' ? 'block' : 'none' }} />
-          </div>
+
+          <TrendCard region={selectedRegion} history={history} historyStatus={historyStatus} />
         </div>
 
-        {selectedRegion && <RegionPanel region={selectedRegion} />}
+        {selectedRegion && <RegionPanel region={selectedRegion} weeklyDelta={weeklyDelta} />}
       </div>
     </div>
   );

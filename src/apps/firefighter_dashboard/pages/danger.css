@@ -66,6 +66,23 @@
 .danger-legend-dot--caution { background: var(--color-risk-caution); }
 .danger-legend-dot--danger  { background: var(--color-risk-danger); }
 
+.danger-legend-divider {
+  width: 1px;
+  height: 12px;
+  background: var(--color-border-medium);
+  margin: 0 2px;
+}
+
+.danger-legend-dot--active-incident {
+  background: var(--color-brand);
+  animation: danger-legend-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes danger-legend-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 .danger-map-body {
   flex: 1;
   min-height: 500px;
@@ -258,3 +275,69 @@
 .danger-register-btn:hover {
   background: var(--color-brand-mid);
 }
+
+.danger-map-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.danger-trend-card {
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border-card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 20px 24px;
+}
+
+.danger-trend-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.danger-trend-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.danger-trend-sub {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.danger-trend-placeholder {
+  padding: 16px 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.danger-trend-svg {
+  width: 100%;
+  height: 56px;
+  overflow: visible;
+}
+
+.danger-trend-line {
+  fill: none;
+  stroke: var(--color-brand);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.danger-delta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.danger-delta--up   { color: var(--color-risk-danger); }
+.danger-delta--down { color: var(--color-risk-safe); }
+.danger-delta--flat { color: var(--color-text-muted); }

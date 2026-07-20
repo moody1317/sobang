@@ -1,4 +1,5 @@
 import threading
+import time
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -8,6 +9,12 @@ import app.api.v1.station as stations
 
 from app.core.database import Base, SessionLocal, engine
 from app.api.v1.statistics import warm_ems_hourly_cache
+from app.services.earthquake_service import poll_recent_earthquakes
+from app.services.weather_warning_service import sync_weather_warnings
+from app.services.inspection_service import check_inspection_deadlines
+from app.services.risk_score_service import (
+    calculate_jurisdiction_risk_scores, allocate_risk_score_to_dongs, snapshot_dong_risk_scores,
+)
 import app.models.station
 import app.models.user
 import app.models.safety_center
@@ -46,10 +53,43 @@ def _warm_caches():
     finally:
         db.close()
 
+EARTHQUAKE_POLL_SECONDS = 5 * 60
+WEATHER_POLL_SECONDS = 30 * 60
+DAILY_SECONDS = 24 * 60 * 60
+
+def _run_periodically(name: str, fn, interval_seconds: int):
+    while True:
+        db = SessionLocal()
+        try:
+            fn(db)
+        except Exception as e:  # 한 번 실패해도 폴링 자체는 계속 돈다
+            db.rollback()
+            print(f"[{name}] 폴링 중 오류:", e)
+        finally:
+            db.close()
+        time.sleep(interval_seconds)
+
+def _recalculate_risk_scores(db):
+    calculate_jurisdiction_risk_scores(db)
+    allocate_risk_score_to_dongs(db)
+    snapshot_dong_risk_scores(db)
+
 @app.on_event("startup")
 def on_startup():
     Base.metadata.create_all(bind=engine)
     threading.Thread(target=_warm_caches, daemon=True).start()
+    threading.Thread(
+        target=_run_periodically, args=("지진", poll_recent_earthquakes, EARTHQUAKE_POLL_SECONDS), daemon=True
+    ).start()
+    threading.Thread(
+        target=_run_periodically, args=("기상특보", sync_weather_warnings, WEATHER_POLL_SECONDS), daemon=True
+    ).start()
+    threading.Thread(
+        target=_run_periodically, args=("점검기한", check_inspection_deadlines, DAILY_SECONDS), daemon=True
+    ).start()
+    threading.Thread(
+        target=_run_periodically, args=("위험점수", _recalculate_risk_scores, DAILY_SECONDS), daemon=True
+    ).start()
 
 @app.get("/")
 def root():

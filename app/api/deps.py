@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
@@ -7,23 +7,27 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.models.user import User
 
-bearer_scheme = HTTPBearer()
+bearer_scheme = HTTPBearer(auto_error=False)
 
 def get_db_session():
     yield from get_db()
 
 def get_current_user(
+        request: Request,
         credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
         db: Session = Depends(get_db_session),
 ):
-    
-    token = credentials.credentials
-    
+    # 브라우저는 httpOnly 쿠키로 인증하고, Swagger/외부 API 클라이언트는 Authorization 헤더를 계속 쓸 수 있게 둘 다 허용
+    token = request.cookies.get("access_token") or (credentials.credentials if credentials else None)
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="인증에 실패했습니다.",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+    if not token:
+        raise credentials_exception
 
     try:
         payload = jwt.decode(

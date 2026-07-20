@@ -5,11 +5,9 @@ from datetime import datetime
 from app.api.deps import get_db_session, get_current_active_user
 from app.models.incident import Incident, IncidentType, IncidentStatus
 from app.models.incident_dispatch import IncidentDispatch
-from app.models.notification import NotificationLevel
 from app.models.user import User
 from app.schemas.incident import IncidentReturnRequest
 from app.services.incident_service import simulate_incident as simulate_incident_service
-from app.services.notification_service import create_notification
 from app.services.risk_score_service import recalculate_active_incident_boost
 from app.services import incident_dispatch_service
 from app.services import vehicle_dispatch_service
@@ -73,19 +71,7 @@ def update_incident_status(
     if new_status == IncidentStatus.출동중:
         incident.dispatched_at = now
     elif new_status == IncidentStatus.종료:
-        incident.resolved_at = now
-        create_notification(
-            db,
-            level=NotificationLevel.SAFE,
-            source="incident",
-            title=incident.dong_name,
-            message=(
-                "허위 신고로 확인되어 종료되었습니다." if incident.is_false_alarm
-                else f"{incident.incident_type.value} 상황이 종료되었습니다."
-            ),
-            station_id=incident.station_id,
-            related_incident_id=incident.id,
-        )
+        incident_dispatch_service.end_incident(db, incident, incident.is_false_alarm)
 
     db.commit()
     # 종료/허위신고 처리 모두 여기서 처리 — get_active_incidents_for_safety_center의
@@ -189,7 +175,7 @@ def return_from_dispatch(
 
     try:
         dispatch = incident_dispatch_service.complete_return(
-            db, incident, current_user, data.activity_note, data.equipment_used
+            db, incident, current_user, data.activity_note, data.equipment_used, data.reported_false_alarm
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -200,4 +186,5 @@ def return_from_dispatch(
         "returned_at": dispatch.returned_at.isoformat(),
         "activity_note": dispatch.activity_note,
         "equipment_used": dispatch.equipment_used,
+        "incident_status": incident.status.value,
     }

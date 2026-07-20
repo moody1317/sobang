@@ -4,3 +4,4 @@ from pydantic import BaseModel
 class IncidentReturnRequest(BaseModel):
     activity_note: str
     equipment_used: Optional[str] = None
+    reported_false_alarm: bool = False

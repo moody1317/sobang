@@ -14,11 +14,22 @@ from app.models.mountain_accident import MountainAccident
 from app.models.fire_target import FireTarget
 from app.models.station import Station
 from app.models.safety_center import SafetyCenter
+from app.models.local_unit import LocalUnit
 from app.models.user import User
 from app.models.incident import Incident, IncidentType, IncidentStatus
+from app.models.notification import NotificationLevel
 from app.services.jurisdiction_population_service import extract_sigungu, get_my_jurisdictions
 from app.services.weather_warning_service import get_active_warnings_for_jurisdiction, get_weather_warning_weight
 from app.services.earthquake_service import get_earthquake_boost_for_jurisdiction
+from app.services.notification_service import create_notification
+
+RISK_LEVEL_KO = {"danger": "위험", "caution": "주의", "warning": "경계", "safe": "안전"}
+RISK_LEVEL_NOTIF = {
+    "danger": NotificationLevel.DANGER,
+    "caution": NotificationLevel.CAUTION,
+    "warning": NotificationLevel.WARNING,
+    "safe": NotificationLevel.SAFE,
+}
 
 WEATHER_STRESS_SEVERITY = {0: 0.5, 1: 1.0}  # 0=주의보, 1=경보 — 초기 경험값(위험 스코어 산식 DB 명세서 6장)
 COUNT_BASED_KEYS = ["target", "fire", "ems", "mountain", "death", "injury", "damage"]
@@ -138,6 +149,37 @@ def _incident_dong_key(dong_name: str) -> str:
     return unicodedata.normalize("NFC", dong_name) if dong_name else dong_name
 
 
+def _resolve_jurisdiction_station_id(
+    jurisdiction: Jurisdiction, safety_center_parent: dict, local_unit_parent: dict
+) -> int | None:
+    if jurisdiction.station_id:
+        return jurisdiction.station_id
+    if jurisdiction.safety_center_id:
+        return safety_center_parent.get(jurisdiction.safety_center_id)
+    if jurisdiction.local_unit_id:
+        return local_unit_parent.get(jurisdiction.local_unit_id)
+    return None
+
+
+def _notify_if_dong_risk_level_changed(
+    db: Session, boundary: AdminDongBoundary, station_id: int | None, old_score
+) -> None:
+    if old_score is None or boundary.risk_score is None:
+        return
+    old_level = resolve_risk_level(float(old_score))
+    new_level = resolve_risk_level(float(boundary.risk_score))
+    if old_level == new_level:
+        return
+    create_notification(
+        db,
+        level=RISK_LEVEL_NOTIF[new_level],
+        source="risk_score",
+        title=boundary.dong_nm,
+        message=f"{boundary.sigungu_nm} {boundary.dong_nm} 위험도가 {RISK_LEVEL_KO[old_level]}에서 {RISK_LEVEL_KO[new_level]}(으)로 변경되었습니다.",
+        station_id=station_id,
+    )
+
+
 def recalculate_active_incident_boost_for_jurisdiction(db: Session, jurisdiction: Jurisdiction) -> None:
     if not jurisdiction.risk_score_breakdown:
         return
@@ -192,12 +234,14 @@ def recalculate_active_incident_boost_for_dong(db: Session, incident: Incident) 
         for i in get_active_incidents_for_safety_center(db, incident.safety_center_id)
         if _incident_dong_key(i.dong_name) == target_key
     ]
+    old_score = boundary.risk_score
     breakdown = dict(boundary.risk_score_breakdown)
     breakdown["active_incident"] = round(active_incident_boost(incidents_in_dong), 2)
 
     boundary.risk_score_breakdown = breakdown
     boundary.risk_score = min(100, round(sum(breakdown.values()), 2))
     boundary.risk_score_updated_at = datetime.now()
+    _notify_if_dong_risk_level_changed(db, boundary, incident.station_id, old_score)
     db.commit()
 
 
@@ -293,6 +337,8 @@ def allocate_risk_score_to_dongs(db: Session) -> dict:
     boundary_lookup = {dong_key(b.sigungu_nm, b.dong_nm): b for b in db.query(AdminDongBoundary).all()}
     jurisdictions = {j.id: j for j in db.query(Jurisdiction).filter(Jurisdiction.is_active == True).all()}
     jurisdiction_dongs = db.query(JurisdictionDong).all()
+    safety_center_parent = {c.id: c.parent_station_id for c in db.query(SafetyCenter).all()}
+    local_unit_parent = {u.id: u.parent_station_id for u in db.query(LocalUnit).all()}
 
     jurisdiction_population = {}
     for jd in jurisdiction_dongs:
@@ -346,9 +392,12 @@ def allocate_risk_score_to_dongs(db: Session) -> dict:
         dong_incidents = active_incidents_by_dong.get(_incident_dong_key(jd.dong_nm), [])
         dong_breakdown["active_incident"] = round(active_incident_boost(dong_incidents), 2)
 
+        old_score = boundary.risk_score
         boundary.risk_score = min(100, round(sum(dong_breakdown.values()), 2))
         boundary.risk_score_breakdown = dong_breakdown
         boundary.risk_score_updated_at = now
+        station_id = _resolve_jurisdiction_station_id(jurisdiction, safety_center_parent, local_unit_parent)
+        _notify_if_dong_risk_level_changed(db, boundary, station_id, old_score)
         updated += 1
 
     db.commit()

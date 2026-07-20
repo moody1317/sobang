@@ -1,5 +1,5 @@
 import enum
-from sqlalchemy import Column, Integer, String, DateTime, Enum, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, String, DateTime, Enum, ForeignKey, UniqueConstraint, Boolean
 from sqlalchemy.sql import func
 from app.core.database import Base
 
@@ -20,3 +20,4 @@ class IncidentDispatch(Base):
     returned_at = Column(DateTime, nullable=True)
     activity_note = Column(String(500), nullable=True)
     equipment_used = Column(String(200), nullable=True)
+    reported_false_alarm = Column(Boolean, nullable=True)

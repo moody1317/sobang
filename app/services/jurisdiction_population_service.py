@@ -160,9 +160,9 @@ def get_my_jurisdictions(db: Session, current_user: User) -> list[Jurisdiction]:
             Jurisdiction.is_active == True,
         ).all()
 
-    if current_user.unit_type == UnitType.LOCAL_UNIT and current_user.local_unit_id:
+    if current_user.unit_type == UnitType.LOCAL_UNIT and current_user.safety_center_id:
         return db.query(Jurisdiction).filter(
-            Jurisdiction.local_unit_id == current_user.local_unit_id,
+            Jurisdiction.local_unit_id == current_user.safety_center_id,
             Jurisdiction.is_active == True,
         ).all()
 

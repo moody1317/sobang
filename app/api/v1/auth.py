@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_current_active_user, get_db_session
+from app.core.config import settings
 from app.models.user import User, UnitType
 from app.schemas.auth import LoginRequest, TokenResponse, PasswordChangeRequest, PasswordVerifyRequest
 from app.schemas.user import UserResponse, ProfileUpdateRequest
@@ -34,6 +35,7 @@ def resolve_unit_name(db: Session, user: User, station_name: str) -> str:
 @router.post("/login", response_model=TokenResponse)
 def login(
     login_data: LoginRequest,
+    response: Response,
     db: Session = Depends(get_db_session),
 ):
     try:
@@ -53,14 +55,28 @@ def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="대원번호 또는 비밀번호가 올바르지 않습니다.",
         )
-    
+
     access_token = create_user_token(user)
+
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        samesite="lax",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        path="/",
+    )
 
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
         must_change_password=user.must_change_password,
     )
+
+@router.post("/logout")
+def logout(response: Response):
+    response.delete_cookie(key="access_token", path="/")
+    return {"message": "로그아웃되었습니다."}
 
 @router.post("/change-password")
 def change_my_password(

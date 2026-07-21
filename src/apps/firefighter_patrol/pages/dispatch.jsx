@@ -2,10 +2,13 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import PatrolLayout from '../layouts/patrollayout';
 import { updateIncidentStatus, confirmDispatch } from '../../../api/incidents';
+import { getRoute } from '../../../api/navigation';
+import { loadKakaoMap } from '../utils/loadKakaoMap';
+import { searchNearbyPlaces } from '../utils/nearbyPlaces';
 import './dispatch.css';
 
 const AUTO_START_SECONDS = 38;
-const AVERAGE_PATROL_SPEED_KMH = 30; // 실도로 경로 계산 전 대략적인 예상 소요시간 산출용
+const NEARBY_SEARCH_RADIUS_M = 1000;
 
 const INCIDENT_ICON = {
   화재: 'bi-fire',
@@ -15,20 +18,11 @@ const INCIDENT_ICON = {
   기타: 'bi-question-circle-fill',
 };
 
-function getDistanceKm(lat1, lng1, lat2, lng2) {
-  const R = 6371;
-  const toRad = (deg) => (deg * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
 function PatrolDispatch() {
   const [secondsLeft, setSecondsLeft] = useState(AUTO_START_SECONDS);
-  const [distanceKm, setDistanceKm] = useState(null);
+  const [route, setRoute] = useState(null);
+  const [nearbyPlaces, setNearbyPlaces] = useState([]);
+  const [nearbyStatus, setNearbyStatus] = useState('idle'); // idle | loading | ready | error
   const navigate = useNavigate();
   const location = useLocation();
   const incident = location.state?.incident;
@@ -41,12 +35,44 @@ function PatrolDispatch() {
     }
     if (incident.latitude == null || incident.longitude == null) return;
 
-    navigator.geolocation.getCurrentPosition((position) => {
-      setDistanceKm(
-        getDistanceKm(position.coords.latitude, position.coords.longitude, incident.latitude, incident.longitude)
-      );
-    });
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        getRoute(position.coords.latitude, position.coords.longitude, incident.latitude, incident.longitude)
+          .then((data) => {
+            setRoute({ distanceKm: data.distance_m / 1000, durationMin: Math.round(data.duration_s / 60) });
+          })
+          .catch(() => {});
+      },
+      undefined,
+      { timeout: 10000, maximumAge: 60000 }
+    );
   }, [incident, navigate]);
+
+  useEffect(() => {
+    if (!incident || incident.latitude == null || incident.longitude == null) return;
+
+    let cancelled = false;
+    Promise.resolve().then(() => { if (!cancelled) setNearbyStatus('loading'); });
+
+    loadKakaoMap()
+      .then((kakao) => {
+        if (cancelled) return null;
+        const position = new kakao.maps.LatLng(incident.latitude, incident.longitude);
+        return searchNearbyPlaces(kakao, position, NEARBY_SEARCH_RADIUS_M);
+      })
+      .then((results) => {
+        if (cancelled || !results) return;
+        setNearbyPlaces(results.filter((p) => p.count > 0));
+        setNearbyStatus('ready');
+      })
+      .catch(() => {
+        if (!cancelled) setNearbyStatus('error');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [incident]);
 
   function handleDispatch() {
     updateIncidentStatus(incident.id, '출동중').catch(() => {});
@@ -99,7 +125,31 @@ function PatrolDispatch() {
           ) : (
             <div className="patrol-dispatch-vehicles-list">
               {vehicles.map((v) => (
-                <span key={v.id} className="patrol-dispatch-vehicle-chip">{v.vehicle_type}</span>
+                <span key={v.id} className="patrol-dispatch-vehicle-chip">
+                  {v.vehicle_type}{v.reason ? ` (${v.reason})` : ''}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="patrol-dispatch-vehicles">
+          <span className="patrol-dispatch-vehicles-label">
+            <i className="bi bi-geo" /> 신고지 주변 시설 (반경 {NEARBY_SEARCH_RADIUS_M}m)
+          </span>
+          {nearbyStatus === 'loading' && (
+            <span className="patrol-dispatch-vehicles-empty">주변 시설 조회 중…</span>
+          )}
+          {nearbyStatus === 'error' && (
+            <span className="patrol-dispatch-vehicles-empty">주변 시설 정보를 불러오지 못했습니다</span>
+          )}
+          {nearbyStatus === 'ready' && nearbyPlaces.length === 0 && (
+            <span className="patrol-dispatch-vehicles-empty">주변에 특이 시설이 없습니다</span>
+          )}
+          {nearbyStatus === 'ready' && nearbyPlaces.length > 0 && (
+            <div className="patrol-dispatch-vehicles-list">
+              {nearbyPlaces.map((p) => (
+                <span key={p.code} className="patrol-dispatch-vehicle-chip">{p.label} {p.count}</span>
               ))}
             </div>
           )}
@@ -108,16 +158,16 @@ function PatrolDispatch() {
         <div className="patrol-dispatch-stats">
           <div className="patrol-dispatch-stat">
             <span className="patrol-dispatch-stat-value">
-              {distanceKm !== null ? `${distanceKm.toFixed(1)}km` : '-'}
+              {route ? `${route.distanceKm.toFixed(1)}km` : '-'}
             </span>
-            <span className="patrol-dispatch-stat-label">현재 위치에서 직선거리</span>
+            <span className="patrol-dispatch-stat-label">현재 위치에서 실주행거리</span>
           </div>
           <div className="patrol-dispatch-stat-divider" />
           <div className="patrol-dispatch-stat">
             <span className="patrol-dispatch-stat-value">
-              {distanceKm !== null ? `약 ${Math.max(1, Math.round((distanceKm / AVERAGE_PATROL_SPEED_KMH) * 60))}분` : '-'}
+              {route ? `약 ${route.durationMin}분` : '-'}
             </span>
-            <span className="patrol-dispatch-stat-label">예상 소요 (실도로 경로는 다음 화면에서 확인)</span>
+            <span className="patrol-dispatch-stat-label">예상 소요</span>
           </div>
         </div>
 

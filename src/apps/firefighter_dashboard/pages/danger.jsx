@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import DashboardLayout from '../layouts/dashboardlayout';
 import InspectionAddModal from './inspectionAdd';
 import { loadKakaoMap } from '../../firefighter_patrol/utils/loadKakaoMap';
+import { searchNearbyPlaces } from '../../firefighter_patrol/utils/nearbyPlaces';
 import { getRiskMapDongs, getDongRiskHistory } from '../../../api/riskMap';
 import { getActiveIncidents } from '../../../api/incidents';
 import { LEVEL_CLASS, LEVEL_BY_KEY, BREAKDOWN_LABELS, resolveLevel } from '../utils/riskScore';
@@ -10,6 +11,25 @@ import './danger.css';
 
 const ACTIVE_INCIDENT_POLL_MS = 20000;
 const PULSE_INTERVAL_MS = 800;
+const NEARBY_SEARCH_RADIUS_M = 1000;
+
+function computeCentroid(geometry) {
+  if (!geometry?.coordinates) return null;
+  let sumLat = 0;
+  let sumLng = 0;
+  let count = 0;
+  geometry.coordinates.forEach((polygonCoords) => {
+    polygonCoords.forEach((ring) => {
+      ring.forEach(([lng, lat]) => {
+        sumLat += lat;
+        sumLng += lng;
+        count += 1;
+      });
+    });
+  });
+  if (count === 0) return null;
+  return { lat: sumLat / count, lng: sumLng / count };
+}
 
 function dongToRegion(dong, levelKey, rank, total) {
   return {
@@ -86,6 +106,35 @@ function TrendCard({ region, history, historyStatus }) {
   );
 }
 
+function NearbyFacilitiesCard({ region, places, status }) {
+  if (!region) return null;
+
+  return (
+    <div className="danger-trend-card">
+      <div className="danger-trend-header">
+        <span className="danger-trend-title">{region.name} 주변 시설 (반경 {NEARBY_SEARCH_RADIUS_M}m)</span>
+        <span className="danger-trend-sub">카카오맵 참고자료</span>
+      </div>
+      {status === 'loading' && (
+        <div className="danger-trend-placeholder">주변 시설을 조회하는 중…</div>
+      )}
+      {status === 'error' && (
+        <div className="danger-trend-placeholder">주변 시설 정보를 불러오지 못했습니다</div>
+      )}
+      {status === 'ready' && (
+        <div className="danger-nearby-grid">
+          {places.map((p) => (
+            <div key={p.code} className={`danger-nearby-item${p.count > 0 ? ' danger-nearby-item--has' : ''}`}>
+              <span className="danger-nearby-label">{p.label}</span>
+              <span className="danger-nearby-count">{p.count}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RegionPanel({ region, weeklyDelta }) {
   const [showModal, setShowModal] = useState(false);
   const levelCls = LEVEL_CLASS[region.level] ?? 'safe';
@@ -153,6 +202,8 @@ function DangerMap() {
   const [selectedAdminCode, setSelectedAdminCode] = useState(null);
   const [history, setHistory] = useState([]);
   const [historyStatus, setHistoryStatus] = useState('idle'); // idle | loading | ready | error
+  const [nearbyPlaces, setNearbyPlaces] = useState([]);
+  const [nearbyStatus, setNearbyStatus] = useState('idle'); // idle | loading | ready | error
 
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
@@ -351,6 +402,45 @@ function DangerMap() {
     };
   }, [selectedAdminCode]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const dong = selectedAdminCode ? dongs.find((d) => d.admin_code === selectedAdminCode) : null;
+    const centroid = dong ? computeCentroid(dong.geometry) : null;
+
+    if (!centroid) {
+      Promise.resolve().then(() => {
+        if (cancelled) return;
+        setNearbyPlaces([]);
+        setNearbyStatus('idle');
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    Promise.resolve().then(() => { if (!cancelled) setNearbyStatus('loading'); });
+
+    loadKakaoMap()
+      .then((kakao) => {
+        if (cancelled) return null;
+        const location = new kakao.maps.LatLng(centroid.lat, centroid.lng);
+        return searchNearbyPlaces(kakao, location, NEARBY_SEARCH_RADIUS_M);
+      })
+      .then((results) => {
+        if (cancelled || !results) return;
+        setNearbyPlaces(results);
+        setNearbyStatus('ready');
+      })
+      .catch(() => {
+        if (!cancelled) setNearbyStatus('error');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedAdminCode, dongs]);
+
   // 신고 접수부터 종료까지, 해당 동에 활성 신고가 있는지 주기적으로 확인
   useEffect(() => {
     if (status !== 'ready') return;
@@ -464,6 +554,7 @@ function DangerMap() {
           </div>
 
           <TrendCard region={selectedRegion} history={history} historyStatus={historyStatus} />
+          <NearbyFacilitiesCard region={selectedRegion} places={nearbyPlaces} status={nearbyStatus} />
         </div>
 
         {selectedRegion && <RegionPanel region={selectedRegion} weeklyDelta={weeklyDelta} />}

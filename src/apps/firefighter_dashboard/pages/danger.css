@@ -341,3 +341,34 @@
 .danger-delta--up   { color: var(--color-risk-danger); }
 .danger-delta--down { color: var(--color-risk-safe); }
 .danger-delta--flat { color: var(--color-text-muted); }
+
+.danger-nearby-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.danger-nearby-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-md);
+}
+
+.danger-nearby-item--has {
+  background: var(--color-brand-alert);
+}
+
+.danger-nearby-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.danger-nearby-count {
+  font-size: 13px;
+  color: var(--color-text-primary);
+  font-weight: 700;
+}

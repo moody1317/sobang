@@ -11,7 +11,7 @@ export function loadKakaoMap() {
 
   loadingPromise = new Promise((resolve, reject) => {
     const script = document.createElement('script');
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${import.meta.env.VITE_KAKAO_MAP_KEY}&autoload=false`;
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${import.meta.env.VITE_KAKAO_MAP_KEY}&libraries=services&autoload=false`;
     script.onload = () => window.kakao.maps.load(() => resolve(window.kakao));
     script.onerror = () => {
       script.remove();

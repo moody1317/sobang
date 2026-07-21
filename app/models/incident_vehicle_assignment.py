@@ -14,3 +14,4 @@ class IncidentVehicleAssignment(Base):
     required_crew = Column(Integer, nullable=False)
     safety_center_id = Column(Integer, ForeignKey("safety_centers_v2.id"), nullable=True)
     rescue_unit_id = Column(Integer, ForeignKey("rescue_units.id"), nullable=True)
+    reason = Column(String(200), nullable=True)

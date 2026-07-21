@@ -49,6 +49,7 @@ def get_vehicle_assignments(db: Session, incident_id: int) -> list[dict]:
             "unit_role": v.unit_role.value,
             "unit_name": v.unit_name,
             "required_crew": v.required_crew,
+            "reason": v.reason,
         }
         for v in items
     ]
@@ -71,6 +72,7 @@ def _count_active_assignments(db: Session, vehicle_type: VehicleType, safety_cen
 
 def _borrow_from_nearby_centers(
     db: Session, incident: Incident, station_id: int, vehicle_type: VehicleType, exclude_center_id: int,
+    reason: str | None = None,
 ) -> IncidentVehicleAssignment | None:
     """같은 소방서 산하 다른 안전센터 중 해당 차종이 남는 곳에서 1대 빌려온다.
     신고 위치와 가까운 안전센터부터 순서대로 확인 (구조대는 소방서당 1개뿐이라 대상 아님)."""
@@ -115,27 +117,31 @@ def _borrow_from_nearby_centers(
             required_crew=VEHICLE_CREW_SIZE[vehicle_type],
             safety_center_id=center.id,
             rescue_unit_id=None,
+            reason=reason,
         )
     return None
 
-def get_extra_vehicle_types(db: Session, incident: Incident) -> set[VehicleType]:
-    """주변 위험요소·취약시설에 따라 기본 배정에 추가할 차종. 안전센터 소속 신고에만 적용
+def get_extra_vehicle_types(db: Session, incident: Incident) -> dict[VehicleType, list[str]]:
+    """주변 위험요소·취약시설에 따라 기본 배정에 추가할 차종과 그 근거. 안전센터 소속 신고에만 적용
     (구조대는 소방서당 1개뿐이라 화학차/구급차 자체 재고가 없어 대상 아님)."""
-    extra = set()
+    extra: dict[VehicleType, list[str]] = {}
     if incident.latitude is None or incident.longitude is None:
         return extra
 
     lat, lon = float(incident.latitude), float(incident.longitude)
 
+    def add_reason(vehicle_type: VehicleType, reason: str):
+        extra.setdefault(vehicle_type, []).append(reason)
+
     if get_nearby_hazmat_facilities(db, lat, lon, radius_km=NEARBY_RADIUS_M / 1000):
-        extra.add(VehicleType.화학차)
+        add_reason(VehicleType.화학차, "인근 유해화학시설")
     if count_nearby_category("OL7", lat, lon, NEARBY_RADIUS_M) > 0:
-        extra.add(VehicleType.화학차)
+        add_reason(VehicleType.화학차, "인근 주유소")
 
     if count_nearby_category("SC4", lat, lon, NEARBY_RADIUS_M) > 0:
-        extra.add(VehicleType.구급차)
+        add_reason(VehicleType.구급차, "인근 학교")
     if count_nearby_category("PS3", lat, lon, NEARBY_RADIUS_M) > 0:
-        extra.add(VehicleType.구급차)
+        add_reason(VehicleType.구급차, "인근 어린이집")
 
     return extra
 
@@ -161,9 +167,10 @@ def assign_vehicles_for_incident(db: Session, incident: Incident, station_id: in
     safety_center_id = None if is_rescue else unit.id
     rescue_unit_id = unit.id if is_rescue else None
 
+    extra_reasons: dict[VehicleType, list[str]] = {}
     if not is_rescue:
-        extra_types = get_extra_vehicle_types(db, incident)
-        needed_types = needed_types + [t for t in extra_types if t not in needed_types]
+        extra_reasons = get_extra_vehicle_types(db, incident)
+        needed_types = needed_types + [t for t in extra_reasons if t not in needed_types]
 
     unit_filter = Vehicle.rescue_unit_id == unit.id if is_rescue else Vehicle.safety_center_id == unit.id
     vehicles = db.query(Vehicle).filter(unit_filter, Vehicle.vehicle_type.in_(needed_types)).all()
@@ -171,6 +178,7 @@ def assign_vehicles_for_incident(db: Session, incident: Incident, station_id: in
 
     assignments = []
     for vehicle_type in needed_types:
+        reason = ", ".join(extra_reasons.get(vehicle_type, [])) or None
         vehicle = vehicles_by_type.get(vehicle_type)
         available = 0
         if vehicle:
@@ -186,12 +194,13 @@ def assign_vehicles_for_incident(db: Session, incident: Incident, station_id: in
                 required_crew=VEHICLE_CREW_SIZE[vehicle_type],
                 safety_center_id=safety_center_id,
                 rescue_unit_id=rescue_unit_id,
+                reason=reason,
             )
             db.add(assignment)
             assignments.append(assignment)
 
         if available == 0 and not is_rescue:
-            borrowed = _borrow_from_nearby_centers(db, incident, station_id, vehicle_type, unit.id)
+            borrowed = _borrow_from_nearby_centers(db, incident, station_id, vehicle_type, unit.id, reason)
             if borrowed:
                 db.add(borrowed)
                 assignments.append(borrowed)
